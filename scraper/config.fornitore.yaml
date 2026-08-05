@@ -1,0 +1,80 @@
+# =============================================================================
+# Configurazione DI PROVA, funzionante senza rete.
+#
+# Punta alle fixture in tests/fixtures/ e serve a verificare tutta la catena:
+#   selettori -> varianti -> ricarico -> products.json
+#
+# Provala così (dalla cartella scraper/):
+#   FIXTURES_DIR=$(pwd)/tests/fixtures \
+#     python -m catalog_scraper -c config.fornitore.yaml -o /tmp/prova.json --dry-run
+#
+# Per il sito vero: copia questo file in config.yaml, sostituisci gli URL e
+# incolla i selettori suggeriti da
+#   python -m catalog_scraper.inspect --html-file pagina-salvata.html
+# =============================================================================
+
+site:
+  name: fornitore-demo
+  # In produzione: https://fornitore.it
+  base_url: "file://${FIXTURES_DIR}"
+  catalog_url: "file://${FIXTURES_DIR}/fornitore-catalogo.html"
+  pagination:
+    mode: none          # sulle fixture c'è una pagina sola
+    param: p
+    max_pages: 1
+    next_selector: ".pager__next"
+
+# --- Griglia catalogo --------------------------------------------------------
+# Questi selettori arrivano dall'output di catalog_scraper.inspect
+selectors:
+  product_card: "article.product-item"
+  title: ".product-item__title"
+  url: ".product-item__link"
+  price: ".product-item__price .amount"
+  image: ".product-item__img"
+  category: ".product-item__brand"
+  out_of_stock_flag: ".sold-out"
+
+# --- Scheda prodotto: galleria completa e taglie -----------------------------
+detail:
+  enabled: true
+  gallery: ".product-gallery__img"
+  variants: "select[name='taglia'] option"   # il placeholder viene scartato da solo
+  variant_attribute: "Taglia"
+  description: ".product-detail__description"
+  short_description: ".product-detail__subtitle"
+  sku: ".product-detail__sku"
+  price: ".product-detail__price .amount"
+  max_products: 0
+
+http:
+  engine: requests
+  delay: 0.0            # nessuna attesa: stiamo leggendo file locali
+  respect_robots: true  # ignorato per file://
+
+parsing:
+  decimal_separator: ","      # prezzi italiani: 1.240,00 €
+  thousands_separator: "."
+  currency: "EUR"
+  default_category: "Novità"
+  sku_prefix: "DS"
+
+# --- Ricarico sul prezzo del fornitore ---------------------------------------
+# QUESTA È LA PARTE DA REGOLARE: markup_percent è la percentuale applicata
+# al prezzo di acquisto. 100 = raddoppia (24,50 -> 49,90 con arrotondamento).
+pricing:
+  markup_percent: 100
+
+  # Percentuali diverse per categoria (facoltativo)
+  category_markup:
+    Giacche: 80
+    Maglieria: 70
+
+  # none    -> 49,00
+  # integer -> 49
+  # charm   -> 49,90   (prima cifra "psicologica" >= al prezzo calcolato)
+  rounding: charm
+  charm_ending: 0.90
+
+  min_price: 0                  # prezzo minimo di vendita, 0 = disattivato
+  include_cost_in_output: false # MAI true: il JSON è pubblico nel sito

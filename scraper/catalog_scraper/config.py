@@ -107,6 +107,21 @@ class ParsingConfig:
 
 
 @dataclass
+class PricingConfig:
+    """Ricarico applicato al prezzo del fornitore."""
+
+    # Percentuale sul costo: 100 = raddoppia, 60 = +60%.
+    markup_percent: float = 0.0
+    # Override per categoria: {"Giacche": 80}
+    category_markup: dict[str, float] = field(default_factory=dict)
+    rounding: str = "none"  # none | integer | charm
+    charm_ending: float = 0.90
+    min_price: float = 0.0
+    # Il JSON finisce nel bundle pubblico: tenere il costo fuori è il default.
+    include_cost_in_output: bool = False
+
+
+@dataclass
 class SiteConfig:
     name: str = "catalogo"
     base_url: str = ""
@@ -121,6 +136,7 @@ class ScraperConfig:
     detail: DetailConfig = field(default_factory=DetailConfig)
     http: HttpConfig = field(default_factory=HttpConfig)
     parsing: ParsingConfig = field(default_factory=ParsingConfig)
+    pricing: PricingConfig = field(default_factory=PricingConfig)
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> "ScraperConfig":
@@ -133,6 +149,7 @@ class ScraperConfig:
             detail=DetailConfig(**(raw.get("detail") or {})),
             http=HttpConfig(**(raw.get("http") or {})),
             parsing=ParsingConfig(**(raw.get("parsing") or {})),
+            pricing=PricingConfig(**(raw.get("pricing") or {})),
         )
 
     @classmethod
@@ -152,5 +169,9 @@ class ScraperConfig:
             errors.append("http.engine deve essere 'requests' o 'selenium'")
         if self.site.pagination.mode not in {"none", "query", "link"}:
             errors.append("site.pagination.mode deve essere 'none', 'query' o 'link'")
+        if self.pricing.rounding not in {"none", "integer", "charm"}:
+            errors.append("pricing.rounding deve essere 'none', 'integer' o 'charm'")
+        if self.pricing.markup_percent < 0:
+            errors.append("pricing.markup_percent non può essere negativo")
         if errors:
             raise ValueError("Configurazione non valida:\n- " + "\n- ".join(errors))

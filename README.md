@@ -65,10 +65,12 @@ Variabili d'ambiente (tutte facoltative, vedi `.env.example`):
 
 ```
 scraper/catalog_scraper/
-├── config.py      # schema YAML tipizzato (selettori CSS, HTTP)
-├── fetchers.py    # requests | selenium, rate limiting, robots.txt
+├── config.py      # schema YAML tipizzato (selettori CSS, HTTP, ricarico)
+├── inspect.py     # suggerisce i selettori CSS di una pagina
+├── fetchers.py    # requests | selenium | file://, rate limiting, robots.txt
 ├── parser.py      # HTML -> Product (BeautifulSoup)
 ├── scraper.py     # paginazione, dedup, arricchimento da scheda prodotto
+├── pricing.py     # ricarico sul prezzo fornitore
 ├── models.py      # Product / Variant
 └── exporters/json_exporter.py   # catalogo JSON per il frontend
 ```
@@ -76,18 +78,100 @@ scraper/catalog_scraper/
 **Nessun selettore è hard-coded**: cambiare fornitore significa scrivere un
 nuovo YAML, mai toccare il codice.
 
+### Configurare un nuovo fornitore
+
 ```bash
 cd scraper
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp config.example.yaml config.yaml     # adatta i selettori CSS
+```
 
-# Tara i selettori su una pagina salvata, senza toccare la rete
-python -m catalog_scraper -c config.yaml --html-file pagina.html --dry-run -v
+**1. Salva una pagina del catalogo** dal browser (`Salva con nome > Pagina web,
+completa`) e chiedi allo scraper quali selettori usare:
 
-# Genera il catalogo che il frontend legge
+```bash
+python -m catalog_scraper.inspect --html-file catalogo.html
+```
+
+Trova i nodi che contengono un prezzo, risale gli antenati e individua la
+struttura che si ripete: quella è la card prodotto. Stampa un blocco YAML già
+pronto **e un'anteprima dei dati estratti**, così vedi subito se ha indovinato.
+
+```yaml
+selectors:
+  product_card: "article.product-item"
+  title: ".product-item__title"
+  url: ".product-item__link"
+  price: ".amount"
+  image: ".product-item__img"
+```
+
+**2. Le taglie stanno nella scheda prodotto**, non nella griglia: apri un
+prodotto, salva l'HTML, cerca il `<select>` o i bottoni taglia e compila il
+blocco `detail:`. Il placeholder ("Seleziona una taglia") viene scartato da
+solo, e le opzioni `disabled` diventano varianti esaurite.
+
+**3. Prova tutto** prima di toccare la rete:
+
+```bash
+cp config.example.yaml config.yaml     # incolla i selettori trovati
+python -m catalog_scraper -c config.yaml --html-file catalogo.html --dry-run -v
+```
+
+**4. Genera il catalogo** che il frontend legge:
+
+```bash
 python -m catalog_scraper -c config.yaml
 ```
+
+### Prova offline già pronta
+
+`config.fornitore.yaml` punta a due fixture che simulano un fornitore reale
+(griglia con prezzi netti, scheda con taglie e galleria). Esegue l'intera catena
+senza rete, grazie al supporto `file://` del fetcher:
+
+```bash
+FIXTURES_DIR=$(pwd)/tests/fixtures \
+  python -m catalog_scraper -c config.fornitore.yaml -o /tmp/prova.json --dry-run
+```
+
+```
+[dry-run] Felpa Heavy Cotton        costo 24.50   -> vendita 49.90  | 5 varianti | 4 immagini
+[dry-run] Pantalone Cargo Ripstop   costo 31.00   -> vendita 62.90  | 5 varianti | 4 immagini
+[dry-run] Giacca Bomber Nylon       costo 58.00   -> vendita 104.90 | 5 varianti | 4 immagini
+```
+
+Usalo come modello: sostituisci gli URL `file://` con quelli del fornitore e i
+selettori con quelli suggeriti da `inspect`.
+
+### Ricarico sul prezzo del fornitore
+
+Il prezzo estratto dal sito sorgente è un **costo**. Il blocco `pricing:` lo
+trasforma in prezzo di vendita:
+
+```yaml
+pricing:
+  markup_percent: 100          # 100 = raddoppia, 60 = +60%
+  category_markup:
+    Giacche: 80                # percentuali diverse per categoria
+  rounding: charm              # 49,00 -> 49,90
+  min_price: 0
+  include_cost_in_output: false
+```
+
+Da riga di comando: `--markup 60` sovrascrive `markup_percent` (gli override per
+categoria restano attivi).
+
+Il ricarico si applica a prezzo pieno, prezzo scontato e prezzi delle singole
+taglie con la stessa percentuale, così l'eventuale sconto mantiene la
+proporzione. L'arrotondamento `charm` non scende **mai** sotto il prezzo
+calcolato: meglio un centesimo in più che margine eroso.
+
+> **Il costo del fornitore non finisce nel JSON.** Quel file viene incluso nel
+> bundle del sito ed è leggibile da chiunque apra il browser: pubblicarlo
+> significherebbe mostrare i tuoi margini ai clienti e ai concorrenti. Resta in
+> `Product.extra` e compare solo se attivi `include_cost_in_output`, che serve
+> per analisi interne — non per il file pubblicato.
 
 Estrae titolo, categoria, prezzo pieno e scontato, **immagini multiple**
 (`srcset`, `<picture>`, lazy-load `data-src`) e **varianti/taglie** con
@@ -99,7 +183,7 @@ Vercel ricostruisce da solo. Il deploy è il momento in cui il catalogo cambia �
 niente cache da invalidare.
 
 ```bash
-cd scraper && python -m pytest -q     # 22 test su fixture HTML statiche
+cd scraper && python -m pytest -q     # 51 test su fixture HTML statiche
 ```
 
 ### Uso responsabile

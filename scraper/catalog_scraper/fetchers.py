@@ -14,7 +14,9 @@ import logging
 import time
 import urllib.robotparser
 from abc import ABC, abstractmethod
+from pathlib import Path
 from urllib.parse import urljoin, urlparse
+from urllib.request import url2pathname
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -42,6 +44,15 @@ class BaseFetcher(ABC):
     def _download(self, url: str) -> str: ...
 
     def get(self, url: str) -> str:
+        # file:// serve a provare la configurazione su pagine salvate in locale.
+        if url.startswith("file://"):
+            path = url2pathname(urlparse(url).path)
+            logger.info("READ %s", path)
+            try:
+                return Path(path).read_text(encoding="utf-8", errors="replace")
+            except OSError as exc:
+                raise FetchError(f"File non leggibile: {path}: {exc}") from exc
+
         if self.config.respect_robots and not self.is_allowed(url):
             raise FetchError(f"robots.txt vieta lo scraping di {url}")
         self._throttle()

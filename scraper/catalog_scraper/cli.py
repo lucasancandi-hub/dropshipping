@@ -18,6 +18,7 @@ from pathlib import Path
 from .config import ScraperConfig
 from .exporters.json_exporter import export_json
 from .models import Product
+from .pricing import apply_pricing
 from .parser import CatalogParser
 from .scraper import CatalogScraper
 
@@ -45,6 +46,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Analizza un HTML locale invece di scaricarlo (utile per tarare i selettori)",
     )
     parser.add_argument("--limit", type=int, default=0, help="Massimo prodotti da elaborare")
+    parser.add_argument(
+        "--markup",
+        type=float,
+        default=None,
+        help="Ricarico percentuale sul prezzo fornitore (sovrascrive pricing.markup_percent)",
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -84,6 +91,13 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("%s", exc)
         return 2
 
+    # Il flag da riga di comando ha la precedenza sul file di configurazione.
+    if args.markup is not None:
+        if args.markup < 0:
+            logger.error("Il ricarico non può essere negativo.")
+            return 2
+        config.pricing.markup_percent = args.markup
+
     if args.limit:
         products = products[: args.limit]
     if not products:
@@ -97,18 +111,24 @@ def main(argv: list[str] | None = None) -> int:
         sum(1 for p in products if p.effective_price is None),
     )
 
+    apply_pricing(products, config.pricing)
+
     if args.dry_run:
         for product in products:
+            cost = product.extra.get("cost_price")
             logger.info(
-                "[dry-run] %s | %s | %s varianti | %s immagini",
-                product.title,
-                product.effective_price if product.effective_price is not None else "da concordare",
+                "[dry-run] %-34s costo %-9s -> vendita %-9s | %d varianti | %d immagini",
+                product.title[:34],
+                f"{cost:.2f}" if cost is not None else "n/d",
+                f"{product.effective_price:.2f}"
+                if product.effective_price is not None
+                else "da concordare",
                 len(product.variants),
                 len(product.images),
             )
         return 0
 
-    export_json(products, args.output)
+    export_json(products, args.output, config.pricing.include_cost_in_output)
     return 0
 
 

@@ -69,3 +69,13 @@ parsing:
 # --- Output ------------------------------------------------------------------
 # Il JSON generato viene letto dal frontend a build time.
 # Percorso di default: ../data/products.json (sovrascrivibile con -o)
+
+# --- Ricarico sul prezzo del fornitore ---------------------------------------
+# Il prezzo estratto dal sito sorgente è il COSTO: qui diventa prezzo di vendita.
+pricing:
+  markup_percent: 100          # 100 = raddoppia, 60 = +60%
+  category_markup: {}          # override per categoria, es. {Giacche: 80}
+  rounding: charm              # none | integer | charm (49,00 -> 49,90)
+  charm_ending: 0.90
+  min_price: 0                 # prezzo minimo di vendita, 0 = disattivato
+  include_cost_in_output: false  # MAI true: il JSON è pubblico nel sito

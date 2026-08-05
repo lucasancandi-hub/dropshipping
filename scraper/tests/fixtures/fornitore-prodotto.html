@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="utf-8"><title>Felpa Heavy Cotton — Fornitore Moda</title></head>
+<body>
+<main class="product-page">
+
+  <!-- Galleria: più immagini, alcune lazy, una in srcset -->
+  <div class="product-gallery">
+    <img class="product-gallery__img" src="/media/felpa-fronte.jpg" alt="fronte">
+    <img class="product-gallery__img" data-src="/media/felpa-retro.jpg" alt="retro">
+    <img class="product-gallery__img"
+         srcset="/media/felpa-dettaglio-600.jpg 600w, /media/felpa-dettaglio-1600.jpg 1600w" alt="dettaglio">
+  </div>
+
+  <div class="product-detail">
+    <p class="product-detail__sku">FLP-HVY-001</p>
+    <h1 class="product-detail__title">Felpa Heavy Cotton</h1>
+    <p class="product-detail__subtitle">Cotone garzato 400 g/m², vestibilità regolare.</p>
+    <div class="product-detail__price"><span class="amount">24,50 €</span></div>
+
+    <!-- Taglie: menu a tendina con placeholder e una taglia esaurita -->
+    <label for="size">Taglia</label>
+    <select id="size" name="taglia" class="product-detail__size">
+      <option value="">Seleziona una taglia</option>
+      <option value="S">S</option>
+      <option value="M">M</option>
+      <option value="L" data-price="26,50">L</option>
+      <option value="XL" disabled>XL</option>
+      <option value="XXL" data-price="28,00">XXL</option>
+    </select>
+
+    <div class="product-detail__description">
+      Felpa girocollo in cotone garzato, polsini a costine, cuciture rinforzate.
+      Lavaggio a 30°, non candeggiare.
+    </div>
+  </div>
+</main>
+</body>
+</html>

@@ -32,8 +32,14 @@ def _unique_slug(product: Product, taken: set[str]) -> str:
     return slug
 
 
-def product_to_dict(product: Product, slug: str) -> dict[str, Any]:
-    """Un prodotto nella forma attesa dal frontend."""
+def product_to_dict(
+    product: Product, slug: str, include_cost: bool = False
+) -> dict[str, Any]:
+    """Un prodotto nella forma attesa dal frontend.
+
+    `include_cost` aggiunge costo fornitore e ricarico: da usare solo per
+    export interni, mai per il file servito al browser.
+    """
     variants = [
         {
             "id": f"{product.sku}-{slugify(variant.value) or index}",
@@ -50,7 +56,7 @@ def product_to_dict(product: Product, slug: str) -> dict[str, Any]:
     # Senza prezzo il frontend mostra "Prezzo da concordare in chat".
     price_on_request = price is None
 
-    return {
+    payload: dict[str, Any] = {
         "id": product.ensure_sku(),
         "slug": slug,
         "title": product.title,
@@ -69,11 +75,21 @@ def product_to_dict(product: Product, slug: str) -> dict[str, Any]:
         "sourceUrl": product.url,
     }
 
+    if include_cost:
+        payload["costPrice"] = product.extra.get("cost_price")
+        payload["markupPercent"] = product.extra.get("markup_percent")
 
-def build_catalog(products: Iterable[Product]) -> dict[str, Any]:
+    return payload
+
+
+def build_catalog(
+    products: Iterable[Product], include_cost: bool = False
+) -> dict[str, Any]:
     """Documento completo: metadati, categorie e prodotti."""
     taken: set[str] = set()
-    items = [product_to_dict(p, _unique_slug(p, taken)) for p in products]
+    items = [
+        product_to_dict(p, _unique_slug(p, taken), include_cost) for p in products
+    ]
 
     categories: list[str] = []
     for item in items:
@@ -91,12 +107,20 @@ def build_catalog(products: Iterable[Product]) -> dict[str, Any]:
     }
 
 
-def export_json(products: Iterable[Product], path: str | Path) -> Path:
+def export_json(
+    products: Iterable[Product], path: str | Path, include_cost: bool = False
+) -> Path:
     """Scrive il catalogo. UTF-8 senza escape: il JSON resta leggibile."""
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
 
-    catalog = build_catalog(products)
+    if include_cost:
+        logger.warning(
+            "Il JSON includerà il costo fornitore: NON pubblicarlo nel sito, "
+            "finisce nel bundle scaricato dal browser."
+        )
+
+    catalog = build_catalog(products, include_cost)
     destination.write_text(
         json.dumps(catalog, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
