@@ -53,8 +53,11 @@ def product_to_dict(
     ]
 
     price = product.effective_price
-    # Senza prezzo il frontend mostra "Prezzo da concordare in chat".
-    price_on_request = price is None
+    # Senza prezzo (o con prezzo zero) il frontend mostra
+    # "Prezzo da concordare in chat" invece di una cifra priva di senso.
+    price_on_request = price is None or price <= 0
+    if price_on_request:
+        price = None
 
     payload: dict[str, Any] = {
         "id": product.ensure_sku(),

@@ -72,13 +72,73 @@ scraper/catalog_scraper/
 ├── scraper.py     # paginazione, dedup, arricchimento da scheda prodotto
 ├── pricing.py     # ricarico sul prezzo fornitore
 ├── models.py      # Product / Variant
+├── importers/json_feed.py       # import da feed JSON (API o file)
 └── exporters/json_exporter.py   # catalogo JSON per il frontend
 ```
 
 **Nessun selettore è hard-coded**: cambiare fornitore significa scrivere un
 nuovo YAML, mai toccare il codice.
 
-### Configurare un nuovo fornitore
+### Import da feed JSON (consigliato)
+
+Se il fornitore espone un'API o un file, questa è la strada da preferire: i dati
+arrivano già strutturati, non c'è nessun selettore da indovinare e niente si
+rompe quando il fornitore ridisegna il sito.
+
+`config.feed-demo.yaml` è pronto e gira **senza rete** su una fixture con
+scarpe e magliette generiche, costruita con la stessa forma della risposta di
+`dummyjson.com`:
+
+```bash
+cd scraper
+python -m catalog_scraper -c config.feed-demo.yaml -o /tmp/prova.json --dry-run
+```
+
+```
+[dry-run] Sneaker Runner Grigia   costo 37.59  -> vendita 60.90  | 4 varianti | 3 immagini
+[dry-run] T-Shirt Cotone Bianca   costo 12.50  -> vendita 20.90  | 3 varianti | 2 immagini
+[dry-run] Sneaker Trail Verde     costo n/d    -> vendita da concordare
+```
+
+Per puntarlo a un'API vera basta commentare `file:` e scommentare `url:`.
+
+I campi si associano nel blocco `mapping`, con percorsi puntati che scendono
+dentro le strutture annidate:
+
+```yaml
+feed:
+  enabled: true
+  url: "https://dummyjson.com/products"
+  root: "products"          # dove sta l'array dentro la risposta
+  pagination_mode: offset   # aggiunge ?limit=30&skip=N
+  page_size: 30
+  mapping:
+    title: "title"
+    price: "price"
+    discount_percent: "discountPercentage"  # sconto già applicato dal fornitore
+    category: "category"
+    images: "images"        # array
+    image: "thumbnail"      # eventuale singola, accodata
+    stock: "stock"
+    variants: "sizes"       # regge sia [{"size":"42"}] sia ["S","M","L"]
+    variant_label: "size"
+    variant_price: "price"
+    variant_stock: "stock"
+```
+
+L'importer è tollerante per costruzione: un percorso inesistente vale `None`
+invece di far fallire l'import, gli elementi senza titolo vengono scartati, e
+i prezzi si leggono sia da numero sia da stringa (`"14,90"` e `"14.90"`).
+
+**Un prezzo a `0` viene trattato come prezzo assente**, non come merce gratis:
+il prodotto finisce a "da concordare in chat" invece di comparire a 0,90 € dopo
+il ricarico.
+
+### Estrazione da HTML
+
+Quando il feed non c'è, resta il parsing della pagina.
+
+#### Configurare un nuovo fornitore
 
 ```bash
 cd scraper
@@ -124,7 +184,7 @@ python -m catalog_scraper -c config.yaml --html-file catalogo.html --dry-run -v
 python -m catalog_scraper -c config.yaml
 ```
 
-### Prova offline già pronta
+#### Prova offline già pronta
 
 `config.fornitore.yaml` punta a due fixture che simulano un fornitore reale
 (griglia con prezzi netti, scheda con taglie e galleria). Esegue l'intera catena
@@ -196,7 +256,7 @@ Vercel ricostruisce da solo. Il deploy è il momento in cui il catalogo cambia �
 niente cache da invalidare.
 
 ```bash
-cd scraper && python -m pytest -q     # 51 test su fixture HTML statiche
+cd scraper && python -m pytest -q     # 81 test, tutti offline
 ```
 
 ### Uso responsabile

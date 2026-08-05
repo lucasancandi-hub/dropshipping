@@ -1,0 +1,141 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "title": "Sneaker Runner Grigia",
+      "description": "Tomaia in mesh traspirante, suola in gomma.",
+      "category": "scarpe",
+      "price": 42.0,
+      "discountPercentage": 10.5,
+      "stock": 24,
+      "sku": "SNK-RUN-GRI",
+      "brand": "Generic",
+      "thumbnail": "https://esempio.test/img/sneaker-thumb.jpg",
+      "images": [
+        "https://esempio.test/img/sneaker-1.jpg",
+        "https://esempio.test/img/sneaker-2.jpg"
+      ],
+      "meta": {
+        "barcode": "1234567890"
+      },
+      "sizes": [
+        {
+          "size": "40",
+          "stock": 5
+        },
+        {
+          "size": "41",
+          "stock": 0
+        },
+        {
+          "size": "42",
+          "stock": 9,
+          "price": 44.0
+        },
+        {
+          "size": "43",
+          "stock": 3
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "T-Shirt Cotone Bianca",
+      "description": "Jersey pettinato 180 g/m².",
+      "category": "magliette",
+      "price": 12.5,
+      "discountPercentage": 0,
+      "stock": 120,
+      "sku": "TSH-COT-BIA",
+      "thumbnail": "https://esempio.test/img/tshirt-thumb.jpg",
+      "images": [
+        "https://esempio.test/img/tshirt-1.jpg"
+      ],
+      "sizes": [
+        {
+          "size": "S",
+          "stock": 10
+        },
+        {
+          "size": "M",
+          "stock": 40
+        },
+        {
+          "size": "L",
+          "stock": 0
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Sneaker Court Bianca",
+      "description": "Pelle liscia, suola vulcanizzata.",
+      "category": "scarpe",
+      "price": 58.0,
+      "discountPercentage": 25,
+      "stock": 8,
+      "sku": "SNK-CRT-BIA",
+      "images": [
+        "https://esempio.test/img/court-1.jpg"
+      ],
+      "sizes": [
+        {
+          "size": "41",
+          "stock": 2
+        },
+        {
+          "size": "42",
+          "stock": 6
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "T-Shirt Oversize Nera",
+      "description": "Taglio boxy, spalla scesa.",
+      "category": "magliette",
+      "price": 19.9,
+      "discountPercentage": 0,
+      "stock": 0,
+      "sku": "TSH-OVR-NER",
+      "images": [
+        "https://esempio.test/img/over-1.jpg",
+        "https://esempio.test/img/over-2.jpg"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Sneaker Trail Verde",
+      "description": "Suola tassellata, protezione punta.",
+      "category": "scarpe",
+      "price": 0,
+      "discountPercentage": 0,
+      "stock": 4,
+      "sku": "SNK-TRL-VER",
+      "images": [
+        "https://esempio.test/img/trail-1.jpg"
+      ],
+      "sizes": [
+        {
+          "size": "42",
+          "stock": 4
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "",
+      "price": 10.0,
+      "category": "scarpe"
+    }
+  ],
+  "total": 6,
+  "skip": 0,
+  "limit": 6
+}

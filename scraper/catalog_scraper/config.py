@@ -107,6 +107,56 @@ class ParsingConfig:
 
 
 @dataclass
+class FeedMapping:
+    """Da dove leggere ogni campo dentro un elemento del feed.
+
+    I valori sono percorsi puntati: `price`, `meta.sku`, `images.0`.
+    Lasciare vuoto un campo significa "questo feed non ce l'ha".
+    """
+
+    title: str = "title"
+    price: str = "price"
+    sale_price: str = ""
+    # Percentuale di sconto già applicata dal fornitore (es. dummyjson):
+    # se valorizzata, `price` è il prezzo pieno e il netto viene calcolato.
+    discount_percent: str = ""
+    category: str = "category"
+    sku: str = "sku"
+    description: str = "description"
+    short_description: str = ""
+    images: str = "images"      # array di URL
+    image: str = ""             # oppure un singolo URL
+    url: str = ""
+    stock: str = "stock"        # numero, booleano o testo
+    # Varianti: percorso all'array + campi al suo interno
+    variants: str = ""
+    variant_label: str = "size"
+    variant_price: str = ""
+    variant_stock: str = ""
+    variant_sku: str = ""
+
+
+@dataclass
+class FeedConfig:
+    """Import da feed strutturato (JSON), alternativa al parsing HTML."""
+
+    enabled: bool = False
+    url: str = ""
+    file: str = ""
+    # Percorso puntato all'array di prodotti: "" se la radice è già un array.
+    root: str = "products"
+    variant_attribute: str = "Taglia"
+    # none | offset (aggiunge limit/skip come parametri di query)
+    pagination_mode: str = "none"
+    limit_param: str = "limit"
+    offset_param: str = "skip"
+    page_size: int = 30
+    max_items: int = 0
+    total_key: str = "total"
+    mapping: "FeedMapping" = field(default_factory=lambda: FeedMapping())
+
+
+@dataclass
 class PricingConfig:
     """Ricarico applicato al prezzo del fornitore."""
 
@@ -132,6 +182,13 @@ class SiteConfig:
     pagination: PaginationConfig = field(default_factory=PaginationConfig)
 
 
+def _build_feed(raw: dict[str, Any]) -> FeedConfig:
+    """FeedConfig con il mapping annidato."""
+    raw = dict(raw)
+    mapping = FeedMapping(**(raw.pop("mapping", None) or {}))
+    return FeedConfig(**raw, mapping=mapping)
+
+
 @dataclass
 class ScraperConfig:
     site: SiteConfig = field(default_factory=SiteConfig)
@@ -140,6 +197,7 @@ class ScraperConfig:
     http: HttpConfig = field(default_factory=HttpConfig)
     parsing: ParsingConfig = field(default_factory=ParsingConfig)
     pricing: PricingConfig = field(default_factory=PricingConfig)
+    feed: FeedConfig = field(default_factory=FeedConfig)
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> "ScraperConfig":
@@ -153,6 +211,7 @@ class ScraperConfig:
             http=HttpConfig(**(raw.get("http") or {})),
             parsing=ParsingConfig(**(raw.get("parsing") or {})),
             pricing=PricingConfig(**(raw.get("pricing") or {})),
+            feed=_build_feed(raw.get("feed") or {}),
         )
 
     @classmethod
@@ -162,6 +221,21 @@ class ScraperConfig:
 
     def validate(self) -> None:
         errors: list[str] = []
+
+        # In modalità feed i selettori CSS non hanno senso: si valida altro.
+        if self.feed.enabled:
+            if not (self.feed.url or self.feed.file):
+                errors.append("feed.url oppure feed.file è obbligatorio")
+            if self.feed.pagination_mode not in {"none", "offset"}:
+                errors.append("feed.pagination_mode deve essere 'none' o 'offset'")
+            if not self.feed.mapping.title:
+                errors.append("feed.mapping.title è obbligatorio")
+            if self.pricing.rounding not in {"none", "integer", "charm"}:
+                errors.append("pricing.rounding deve essere 'none', 'integer' o 'charm'")
+            if errors:
+                raise ValueError("Configurazione non valida:\n- " + "\n- ".join(errors))
+            return
+
         if not self.site.catalog_url:
             errors.append("site.catalog_url è obbligatorio")
         if not self.selectors.product_card:

@@ -17,6 +17,7 @@ from pathlib import Path
 
 from .config import ScraperConfig
 from .exporters.json_exporter import export_json
+from .importers.json_feed import import_feed
 from .models import Product
 from .pricing import apply_pricing
 from .parser import CatalogParser
@@ -70,6 +71,12 @@ def _configure_logging(verbose: bool) -> None:
 
 
 def _collect(args: argparse.Namespace, config: ScraperConfig) -> list[Product]:
+    # Feed strutturato: nessun selettore CSS di mezzo.
+    if config.feed.enabled:
+        products = import_feed(config)
+        logger.info("Importati %d prodotti dal feed.", len(products))
+        return products
+
     if args.html_file:
         html = Path(args.html_file).read_text(encoding="utf-8")
         products = CatalogParser(config).parse_catalog(html, config.site.catalog_url)

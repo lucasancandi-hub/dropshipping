@@ -1,0 +1,87 @@
+# =============================================================================
+# Import da feed JSON — configurazione neutra di riferimento
+#
+# È la strada da preferire quando il fornitore espone un'API o un file:
+# niente selettori CSS, niente da riparare quando ridisegnano il sito.
+#
+# Prova locale (fixture con scarpe e magliette generiche, nessuna rete):
+#   python -m catalog_scraper -c config.feed-demo.yaml -o /tmp/prova.json --dry-run
+#
+# Contro l'API di prova pubblica: commenta `file:` e scommenta `url:`.
+# =============================================================================
+
+site:
+  name: demo-feed
+  base_url: ""
+  catalog_url: ""        # non usato in modalità feed
+
+feed:
+  enabled: true
+
+  # --- Sorgente: un file locale OPPURE un URL -------------------------------
+  file: "tests/fixtures/feed-demo.json"
+  # url: "https://dummyjson.com/products"
+
+  # Percorso all'array di prodotti dentro la risposta.
+  # Vuoto se la radice è già un array.
+  root: "products"
+
+  # --- Paginazione dell'API -------------------------------------------------
+  # none   -> una sola richiesta (o file locale)
+  # offset -> aggiunge ?limit=30&skip=N e avanza finché ci sono risultati
+  pagination_mode: none
+  limit_param: limit
+  offset_param: skip
+  page_size: 30
+  total_key: total       # se il feed dichiara il totale, ci si ferma lì
+  max_items: 0           # 0 = nessun limite
+
+  variant_attribute: "Taglia"
+
+  # --- Mappatura dei campi --------------------------------------------------
+  # A sinistra il nostro modello, a destra il percorso nel feed del fornitore.
+  # I percorsi sono puntati: "meta.sku", "images.0".
+  # Lasciare vuoto = "questo feed non ha questo campo".
+  mapping:
+    title: "title"
+    price: "price"
+    sale_price: ""             # se il feed dà direttamente il prezzo scontato
+    discount_percent: "discountPercentage"   # sconto in % già applicato
+    category: "category"
+    sku: "sku"
+    description: "description"
+    short_description: ""
+    images: "images"           # array di URL
+    image: "thumbnail"         # eventuale URL singolo, accodato
+    url: ""
+    stock: "stock"             # numero, booleano o testo
+
+    # Varianti: percorso all'array + campi al suo interno.
+    # Regge sia [{"size": "42", "stock": 9}] sia ["S", "M", "L"].
+    variants: "sizes"
+    variant_label: "size"
+    variant_price: "price"
+    variant_stock: "stock"
+    variant_sku: ""
+
+http:
+  delay: 0.5             # con un'API vera: 0.5-1 s fra le pagine
+  timeout: 25
+  retries: 3
+  respect_robots: true
+
+parsing:
+  currency: "EUR"
+  default_category: "Catalogo"
+  sku_prefix: "DEMO"
+
+pricing:
+  markup_percent: 60
+  price_tiers:
+    - above: 100
+      percent: 50
+  category_markup: {}
+  rounding: charm
+  charm_ending: 0.90
+  min_price: 0
+  include_cost_in_output: false

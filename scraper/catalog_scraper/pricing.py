@@ -103,8 +103,9 @@ def apply_pricing(products: Iterable[Product], pricing: PricingConfig) -> dict[s
     for product in products:
         cost = product.effective_price
 
-        if cost is None:
+        if cost is None or cost <= 0:
             # Prodotto senza prezzo: resta "da concordare in chat".
+            # Ricaricare zero produrrebbe un prezzo di vendita inventato.
             skipped += 1
             continue
 
