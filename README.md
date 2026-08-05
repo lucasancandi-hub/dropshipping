@@ -151,12 +151,25 @@ trasforma in prezzo di vendita:
 
 ```yaml
 pricing:
-  markup_percent: 100          # 100 = raddoppia, 60 = +60%
+  markup_percent: 60           # ricarico di base
+  price_tiers:                 # scaglioni sul costo
+    - above: 100               # da 100 in su: soglia inclusiva
+      percent: 50
   category_markup:
     Giacche: 80                # percentuali diverse per categoria
   rounding: charm              # 49,00 -> 49,90
   min_price: 0
   include_cost_in_output: false
+```
+
+Precedenza, dal più specifico al più generico: **categoria → scaglione →
+percentuale di base**. Con la configurazione qui sopra:
+
+```
+costo   12,00  ->  +60%  ->   19,90
+costo   99,99  ->  +60%  ->  160,90
+costo  100,00  ->  +50%  ->  150,90
+costo  250,00  ->  +50%  ->  375,90
 ```
 
 Da riga di comando: `--markup 60` sovrascrive `markup_percent` (gli override per

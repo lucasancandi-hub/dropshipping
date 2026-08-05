@@ -73,8 +73,14 @@ parsing:
 # --- Ricarico sul prezzo del fornitore ---------------------------------------
 # Il prezzo estratto dal sito sorgente è il COSTO: qui diventa prezzo di vendita.
 pricing:
-  markup_percent: 100          # 100 = raddoppia, 60 = +60%
+  markup_percent: 60           # ricarico di base: 60 = +60%
+  # Scaglioni sul costo: sopra la soglia si applica una percentuale minore,
+  # perché a parità di margine assoluto l'articolo costoso ne sopporta meno.
+  price_tiers:
+    - above: 100               # da 100 in su (soglia inclusiva)
+      percent: 50
   category_markup: {}          # override per categoria, es. {Giacche: 80}
+                               # ha la precedenza sugli scaglioni
   rounding: charm              # none | integer | charm (49,00 -> 49,90)
   charm_ending: 0.90
   min_price: 0                 # prezzo minimo di vendita, 0 = disattivato

@@ -114,6 +114,9 @@ class PricingConfig:
     markup_percent: float = 0.0
     # Override per categoria: {"Giacche": 80}
     category_markup: dict[str, float] = field(default_factory=dict)
+    # Scaglioni sul costo: [{"above": 100, "percent": 50}]
+    # Si applica lo scaglione con la soglia più alta raggiunta dal costo.
+    price_tiers: list[dict[str, float]] = field(default_factory=list)
     rounding: str = "none"  # none | integer | charm
     charm_ending: float = 0.90
     min_price: float = 0.0

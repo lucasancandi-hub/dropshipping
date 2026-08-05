@@ -21,15 +21,33 @@ from .models import Product
 logger = logging.getLogger(__name__)
 
 
-def markup_for(category: str, pricing: PricingConfig) -> float:
-    """Percentuale da applicare, con override per categoria (case-insensitive)."""
-    if not category:
-        return pricing.markup_percent
+def markup_for(category: str, cost: float | None, pricing: PricingConfig) -> float:
+    """Percentuale da applicare a questo prodotto.
 
-    wanted = category.strip().lower()
+    Ordine di precedenza, dal più specifico al più generico:
+
+    1. override per categoria (`category_markup`),
+    2. scaglione di costo (`price_tiers`): vince la soglia più alta raggiunta,
+    3. `markup_percent`.
+
+    Gli articoli costosi sopportano un ricarico percentuale minore a parità di
+    margine assoluto, da cui gli scaglioni.
+    """
+    wanted = (category or "").strip().lower()
     for name, percent in pricing.category_markup.items():
-        if str(name).strip().lower() == wanted:
+        if str(name).strip().lower() == wanted and wanted:
             return float(percent)
+
+    if cost is not None and pricing.price_tiers:
+        applicabili = [
+            tier
+            for tier in pricing.price_tiers
+            if cost >= float(tier.get("above", 0))
+        ]
+        if applicabili:
+            migliore = max(applicabili, key=lambda t: float(t.get("above", 0)))
+            return float(migliore["percent"])
+
     return pricing.markup_percent
 
 
@@ -83,13 +101,16 @@ def apply_pricing(products: Iterable[Product], pricing: PricingConfig) -> dict[s
     total_price = 0.0
 
     for product in products:
-        percent = markup_for(product.categories[0] if product.categories else "", pricing)
         cost = product.effective_price
 
         if cost is None:
             # Prodotto senza prezzo: resta "da concordare in chat".
             skipped += 1
             continue
+
+        percent = markup_for(
+            product.categories[0] if product.categories else "", cost, pricing
+        )
 
         product.extra["cost_price"] = cost
         product.extra["markup_percent"] = percent

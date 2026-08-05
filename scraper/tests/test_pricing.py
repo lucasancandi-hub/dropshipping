@@ -82,10 +82,64 @@ def test_prezzo_minimo():
 # --------------------------------------------------------------------------- #
 def test_override_categoria_case_insensitive():
     config = PricingConfig(markup_percent=100, category_markup={"Giacche": 80})
-    assert markup_for("Giacche", config) == 80
-    assert markup_for("giacche", config) == 80
-    assert markup_for("Felpe", config) == 100
-    assert markup_for("", config) == 100
+    assert markup_for("Giacche", 50.0, config) == 80
+    assert markup_for("giacche", 50.0, config) == 80
+    assert markup_for("Felpe", 50.0, config) == 100
+    assert markup_for("", 50.0, config) == 100
+
+
+# --------------------------------------------------------------------------- #
+# Scaglioni sul costo
+# --------------------------------------------------------------------------- #
+SCAGLIONI = PricingConfig(
+    markup_percent=60,
+    price_tiers=[{"above": 100, "percent": 50}],
+    rounding="charm",
+)
+
+
+@pytest.mark.parametrize(
+    "cost,expected_percent",
+    [
+        (12.00, 60),
+        (99.99, 60),    # appena sotto soglia
+        (100.00, 50),   # la soglia è inclusiva
+        (250.00, 50),
+    ],
+)
+def test_scaglione_per_costo(cost, expected_percent):
+    assert markup_for("", cost, SCAGLIONI) == expected_percent
+
+
+def test_scaglioni_prezzi_finali():
+    assert sell_price(12.00, markup_for("", 12.00, SCAGLIONI), SCAGLIONI) == 19.90
+    assert sell_price(100.00, markup_for("", 100.00, SCAGLIONI), SCAGLIONI) == 150.90
+
+
+def test_piu_scaglioni_vince_la_soglia_piu_alta():
+    config = PricingConfig(
+        markup_percent=80,
+        price_tiers=[
+            {"above": 50, "percent": 60},
+            {"above": 200, "percent": 40},
+            {"above": 100, "percent": 50},
+        ],
+    )
+    assert markup_for("", 20.0, config) == 80    # nessuno scaglione
+    assert markup_for("", 60.0, config) == 60
+    assert markup_for("", 150.0, config) == 50
+    assert markup_for("", 500.0, config) == 40
+
+
+def test_la_categoria_batte_lo_scaglione():
+    """L'override esplicito per categoria è più specifico della soglia."""
+    config = PricingConfig(
+        markup_percent=60,
+        category_markup={"Giacche": 90},
+        price_tiers=[{"above": 100, "percent": 50}],
+    )
+    assert markup_for("Giacche", 250.0, config) == 90
+    assert markup_for("Felpe", 250.0, config) == 50
 
 
 # --------------------------------------------------------------------------- #
