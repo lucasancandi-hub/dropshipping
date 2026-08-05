@@ -1,0 +1,76 @@
+# =============================================================================
+# Listino compilato a mano (foglio di calcolo esportato in CSV)
+#
+#   python -m catalog_scraper -c config.listino.yaml --dry-run
+#
+# I prezzi nel CSV sono PREZZI DI ACQUISTO: il ricarico li trasforma in prezzi
+# di vendita. Se il listino contiene il link alla scheda del fornitore e il
+# blocco detail: è attivo, le foto e le taglie vengono prese da lì.
+# =============================================================================
+
+site:
+  name: listino
+  base_url: ""
+  catalog_url: ""
+
+feed:
+  enabled: true
+  format: csv
+  file: "listino-esempio.csv"     # <- il tuo file
+  delimiter: ""                   # "" = rileva da solo ; oppure ,
+  list_separator: "|"             # separatore dentro una cella multivalore
+  variant_attribute: "Taglia"
+
+  # A sinistra il campo interno, a destra il NOME DELLA COLONNA nel tuo file.
+  mapping:
+    title: "Titolo"
+    price: "Prezzo acquisto"
+    url: "Link prodotto"
+    category: "Categoria"
+    sku: "Codice"
+    description: "Descrizione"
+    images: "Foto"                # vuoto se le foto arrivano dalla scheda
+    variants: "Taglie"
+    variants_out: "Taglie esaurite"
+    variant_label: "taglia"
+    stock: ""                     # nessuna colonna: tutto disponibile
+
+# --- Foto e taglie dalla scheda del fornitore --------------------------------
+# Attiva quando hai i link ai prodotti ma non alle immagini.
+# I selettori si ricavano salvando una scheda e lanciando:
+#   python -m catalog_scraper.inspect --html-file scheda.html
+detail:
+  enabled: false
+  gallery: ""                     # es. ".product-gallery img"
+  variants: ""                    # es. "select[name='size'] option"
+  variant_attribute: "Taglia"
+  description: ""
+  max_products: 0                 # metti 20 per una prima prova
+
+http:
+  delay: 1.5                      # rispettoso se visiti molte schede
+  timeout: 25
+  respect_robots: true
+
+parsing:
+  decimal_separator: ","          # prezzi italiani: 20,00
+  thousands_separator: "."
+  currency: "EUR"
+  default_category: "Catalogo"
+  sku_prefix: "ART"
+
+pricing:
+  # I prezzi del listino non comprendono la spedizione in acquisto:
+  # si somma qui, altrimenti il margine reale è più basso del ricarico.
+  cost_surcharge_fixed: 0.00      # es. 3.50 a pezzo
+  cost_surcharge_percent: 0       # oppure una percentuale
+
+  markup_percent: 60
+  price_tiers:
+    - above: 100
+      percent: 50
+  category_markup: {}
+  rounding: charm
+  charm_ending: 0.90
+  min_price: 0
+  include_cost_in_output: false

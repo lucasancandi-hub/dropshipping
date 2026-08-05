@@ -1,0 +1,6 @@
+Titolo;Prezzo acquisto;Link prodotto;Categoria;Taglie;Taglie esaurite;Codice;Descrizione;Foto
+Sneaker Runner Grigia;20,00;https://fornitore.example/p/sneaker-runner;scarpe;40|41|42|43;41;SNK-RUN;Tomaia in mesh, suola in gomma;
+T-Shirt Cotone Bianca;6,50;https://fornitore.example/p/tshirt-cotone;magliette;S|M|L|XL;;TSH-COT;Jersey pettinato 180 g/m²;
+Felpa Girocollo Nera;14,00;https://fornitore.example/p/felpa-girocollo;felpe;M|L|XL;XL;FLP-GIR;Cotone garzato 320 g/m²;
+Giacca Leggera Blu;38,00;;giacche;M|L;;GCC-LEG;Nylon idrorepellente;https://cdn.example/img/giacca-1.jpg|https://cdn.example/img/giacca-2.jpg
+Borsa Tote Canvas;;https://fornitore.example/p/borsa-tote;accessori;Unica;;BRS-TOT;Canvas 16 oz;

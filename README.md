@@ -121,7 +121,55 @@ scraper/catalog_scraper/
 **Nessun selettore è hard-coded**: cambiare fornitore significa scrivere un
 nuovo YAML, mai toccare il codice.
 
-### Import da feed JSON (consigliato)
+### Listino compilato a mano (CSV)
+
+Se i prodotti li inserisci tu in un foglio di calcolo, esportalo in CSV e usa
+`config.listino.yaml`. I nomi delle colonne li dichiari nel `mapping`, quindi
+puoi tenere le intestazioni che preferisci.
+
+`listino-esempio.csv` è il modello da copiare:
+
+| Titolo | Prezzo acquisto | Link prodotto | Categoria | Taglie | Taglie esaurite | Codice | Descrizione | Foto |
+|---|---|---|---|---|---|---|---|---|
+| Sneaker Runner | 20,00 | https://... | scarpe | 40\|41\|42 | 41 | SNK-RUN | Tomaia in mesh | |
+
+```bash
+python -m catalog_scraper -c config.listino.yaml --dry-run
+```
+
+* Il delimitatore viene rilevato da solo (Excel italiano esporta con `;`).
+* Le celle multivalore si separano con `|` (o con la virgola).
+* Una taglia elencata sia fra le disponibili sia fra le esaurite conta **una
+  volta sola ed è esaurita**: è l'errore di compilazione più probabile.
+* Riga senza prezzo → «da concordare in chat». Riga senza titolo → scartata.
+  Codice duplicato → tenuta la prima.
+
+**Se hai i link alle schede ma non alle foto**, non serve altro strumento:
+attiva il blocco `detail:` e lo scraper visita ogni scheda del fornitore per
+prendere galleria, taglie e descrizione. I selettori si ricavano salvando una
+scheda e lanciando `catalog_scraper.inspect`.
+
+### Il prezzo del fornitore non è il tuo costo
+
+Se il listino non comprende spedizione in acquisto, dogana o imballo, applicare
+il ricarico al prezzo nudo lascia sul tavolo margine reale:
+
+```yaml
+pricing:
+  cost_surcharge_fixed: 3.50    # a pezzo
+  cost_surcharge_percent: 0     # oppure in percentuale
+  markup_percent: 60
+```
+
+```
+senza maggiorazione      costo 20,00 -> vendita 32,90 | margine 12,90
+con 3,50 di spedizione   costo 23,50 -> vendita 37,90 | margine 14,40
+```
+
+La maggiorazione entra anche nella scelta dello scaglione: un articolo da 95 €
+con 10 € di spedizione supera la soglia dei 100 e prende la percentuale alta.
+
+### Import da feed JSON (API del fornitore)
 
 Se il fornitore espone un'API o un file, questa è la strada da preferire: i dati
 arrivano già strutturati, non c'è nessun selettore da indovinare e niente si
@@ -298,7 +346,7 @@ Vercel ricostruisce da solo. Il deploy è il momento in cui il catalogo cambia �
 niente cache da invalidare.
 
 ```bash
-cd scraper && python -m pytest -q     # 81 test, tutti offline
+cd scraper && python -m pytest -q     # 105 test, tutti offline
 ```
 
 ### Uso responsabile

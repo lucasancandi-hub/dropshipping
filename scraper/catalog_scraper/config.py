@@ -134,6 +134,8 @@ class FeedMapping:
     variant_price: str = ""
     variant_stock: str = ""
     variant_sku: str = ""
+    # Solo CSV: colonna con le taglie esaurite, se tenute separate.
+    variants_out: str = ""
 
 
 @dataclass
@@ -141,8 +143,14 @@ class FeedConfig:
     """Import da feed strutturato (JSON), alternativa al parsing HTML."""
 
     enabled: bool = False
+    # json = API o file JSON, csv = foglio di calcolo esportato in CSV
+    format: str = "json"
     url: str = ""
     file: str = ""
+    # Solo CSV: "" = rileva da solo virgola o punto e virgola (Excel italiano)
+    delimiter: str = ""
+    # Solo CSV: separatore dentro una cella che contiene più valori
+    list_separator: str = "|"
     # Percorso puntato all'array di prodotti: "" se la radice è già un array.
     root: str = "products"
     variant_attribute: str = "Taglia"
@@ -167,6 +175,11 @@ class PricingConfig:
     # Scaglioni sul costo: [{"above": 100, "percent": 50}]
     # Si applica lo scaglione con la soglia più alta raggiunta dal costo.
     price_tiers: list[dict[str, float]] = field(default_factory=list)
+    # Costi che il prezzo del fornitore non comprende (spedizione in acquisto,
+    # dogana, imballo): si sommano al costo PRIMA di applicare il ricarico,
+    # altrimenti il margine reale è più basso di quello impostato.
+    cost_surcharge_fixed: float = 0.0
+    cost_surcharge_percent: float = 0.0
     rounding: str = "none"  # none | integer | charm
     charm_ending: float = 0.90
     min_price: float = 0.0
@@ -226,6 +239,10 @@ class ScraperConfig:
         if self.feed.enabled:
             if not (self.feed.url or self.feed.file):
                 errors.append("feed.url oppure feed.file è obbligatorio")
+            if self.feed.format not in {"json", "csv"}:
+                errors.append("feed.format deve essere 'json' o 'csv'")
+            if self.feed.format == "csv" and not self.feed.file:
+                errors.append("feed.file è obbligatorio con format: csv")
             if self.feed.pagination_mode not in {"none", "offset"}:
                 errors.append("feed.pagination_mode deve essere 'none' o 'offset'")
             if not self.feed.mapping.title:

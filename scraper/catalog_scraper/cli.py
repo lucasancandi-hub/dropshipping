@@ -75,6 +75,16 @@ def _collect(args: argparse.Namespace, config: ScraperConfig) -> list[Product]:
     if config.feed.enabled:
         products = import_feed(config)
         logger.info("Importati %d prodotti dal feed.", len(products))
+
+        # Il listino può contenere solo il link alla scheda: se i selettori di
+        # dettaglio sono configurati, si visitano le pagine per prendere foto,
+        # taglie e descrizione.
+        con_url = sum(1 for p in products if p.url)
+        if config.detail.enabled and con_url:
+            logger.info("Arricchimento da %d schede prodotto...", con_url)
+            with CatalogScraper(config) as scraper:
+                products = scraper.enrich(products)
+
         return products
 
     if args.html_file:

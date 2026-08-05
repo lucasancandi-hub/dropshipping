@@ -51,6 +51,17 @@ def markup_for(category: str, cost: float | None, pricing: PricingConfig) -> flo
     return pricing.markup_percent
 
 
+def landed_cost(cost: float, pricing: PricingConfig) -> float:
+    """Costo reale della merce, spese di acquisto comprese.
+
+    Il prezzo del fornitore spesso non include spedizione, dogana o imballo.
+    Applicare il ricarico al prezzo nudo significa incassare un margine più
+    basso di quello impostato: qui il costo viene prima riportato al valore
+    effettivo.
+    """
+    return round(cost * (1 + pricing.cost_surcharge_percent / 100.0) + pricing.cost_surcharge_fixed, 2)
+
+
 def apply_rounding(value: float, pricing: PricingConfig) -> float:
     """Arrotonda il prezzo di vendita secondo la strategia configurata.
 
@@ -109,18 +120,26 @@ def apply_pricing(products: Iterable[Product], pricing: PricingConfig) -> dict[s
             skipped += 1
             continue
 
+        # Lo scaglione si sceglie sul costo reale, non sul prezzo nudo.
+        costo_reale = landed_cost(cost, pricing)
         percent = markup_for(
-            product.categories[0] if product.categories else "", cost, pricing
+            product.categories[0] if product.categories else "", costo_reale, pricing
         )
 
         product.extra["cost_price"] = cost
+        product.extra["landed_cost"] = costo_reale
         product.extra["markup_percent"] = percent
 
-        product.price = sell_price(product.price, percent, pricing)
-        product.sale_price = sell_price(product.sale_price, percent, pricing)
+        def vendita(valore: float | None) -> float | None:
+            if valore is None:
+                return None
+            return sell_price(landed_cost(valore, pricing), percent, pricing)
+
+        product.price = vendita(product.price)
+        product.sale_price = vendita(product.sale_price)
 
         for variant in product.variants:
-            variant.price = sell_price(variant.price, percent, pricing)
+            variant.price = vendita(variant.price)
 
         processed += 1
         total_cost += cost

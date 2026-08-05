@@ -132,12 +132,19 @@ def _as_variants(item: dict[str, Any], feed: FeedConfig) -> list[Variant]:
         if not label:
             continue
 
+        # Il lettore CSV marca le taglie esaurite con una chiave dedicata.
+        disponibile = (
+            bool(entry["__in_stock"])
+            if "__in_stock" in entry
+            else _as_stock(resolve(entry, mapping.variant_stock))
+        )
+
         variants.append(
             Variant(
                 attribute=feed.variant_attribute,
                 value=str(label).strip(),
                 price=_as_price(resolve(entry, mapping.variant_price)),
-                in_stock=_as_stock(resolve(entry, mapping.variant_stock)),
+                in_stock=disponibile,
                 sku=(lambda s: str(s) if s else None)(resolve(entry, mapping.variant_sku)),
             )
         )
@@ -210,6 +217,26 @@ def _load_page(fetcher: BaseFetcher, feed: FeedConfig, offset: int) -> Any:
 def import_feed(config: ScraperConfig, fetcher: BaseFetcher | None = None) -> list[Product]:
     """Scarica il feed e restituisce i prodotti normalizzati."""
     feed = config.feed
+
+    # Un CSV è già tutto in memoria: nessuna rete, nessuna paginazione.
+    if feed.format == "csv":
+        from .csv_feed import load_rows
+
+        prodotti: list[Product] = []
+        visti: set[str] = set()
+        for riga in load_rows(feed):
+            prodotto = item_to_product(riga, feed, config.parsing.currency, config.parsing.sku_prefix)
+            if prodotto is None or not prodotto.is_valid():
+                continue
+            if prodotto.sku in visti:
+                logger.warning("Codice duplicato, riga saltata: %s", prodotto.sku)
+                continue
+            visti.add(prodotto.sku or "")
+            prodotti.append(prodotto)
+
+        logger.info("CSV: %d prodotti validi", len(prodotti))
+        return prodotti[: feed.max_items] if feed.max_items else prodotti
+
     owns_fetcher = fetcher is None
     fetcher = fetcher or build_fetcher(config.http)
 
