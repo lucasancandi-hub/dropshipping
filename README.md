@@ -101,6 +101,61 @@ ricevere lo stesso `ORD-2026-001`. Collegando uno store Redis/KV dal pannello
 Vercel, `/api/order-number` usa `INCR` e la numerazione diventa globale — il
 codice c'è già e si attiva da solo quando trova le variabili.
 
+## Usare un altro scraper
+
+Il sito non sa da dove arriva il catalogo: legge **solo** `data/products.json`.
+Qualunque script produca quel file va bene — quello in `scraper/` è una delle
+strade possibili, non un obbligo.
+
+### Il formato minimo
+
+Serve solo il titolo. Tutto il resto ha un ripiego sensato:
+
+```json
+[
+  {
+    "title": "Sneaker Runner Grigia",
+    "price": 32.90,
+    "category": "scarpe",
+    "images": ["https://cdn.esempio.it/sneaker-1.jpg"],
+    "variants": ["40", "41", "42"]
+  }
+]
+```
+
+* `price` accetta numero o stringa: `32.9`, `"32,90"`, `"€ 32,90"`. Assente o
+  zero → «prezzo da concordare in chat».
+* `images` accetta una stringa singola o un elenco. Servono URL completi
+  (`https://...`) o percorsi dalla cartella `public/` (`/foto/x.jpg`).
+* `variants` accetta `["S","M"]` oppure `[{"label":"S","inStock":false}]`.
+* `slug` e `id` vengono generati dal titolo se mancano.
+
+### Controllare il file prima di pubblicare
+
+```bash
+cd scraper
+python -m catalog_scraper.validate ../data/products.json
+```
+
+Dice in italiano cosa non va, distinguendo ciò che blocca da ciò che è solo
+un avviso. Con `--fix` completa i campi mancanti e riscrive il file nella forma
+giusta:
+
+```bash
+python -m catalog_scraper.validate mio-catalogo.json --fix -o ../data/products.json
+```
+
+```
+avviso   "Sneaker Runner": slug duplicato, rinominato in 'sneaker-runner-2'
+avviso   "Sneaker Runner": prezzo non interpretabile ('n/d'), diventa «da concordare»
+avviso   prodotto #4: manca il titolo, riga scartata
+
+Catalogo valido: 4 prodotti, 3 categorie, 3 immagini, 1 con taglie, 1 da concordare.
+```
+
+Blocca solo quando non c'è niente da salvare: file non JSON, chiave `products`
+assente, nessuna riga con un titolo.
+
 ---
 
 ## 1. Scraper (Python)
@@ -346,7 +401,7 @@ Vercel ricostruisce da solo. Il deploy è il momento in cui il catalogo cambia �
 niente cache da invalidare.
 
 ```bash
-cd scraper && python -m pytest -q     # 105 test, tutti offline
+cd scraper && python -m pytest -q     # 130 test, tutti offline
 ```
 
 ### Uso responsabile
