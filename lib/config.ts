@@ -14,8 +14,26 @@ export type ShippingMode = 'flat' | 'quantity' | 'none';
 
 const mode = process.env.NEXT_PUBLIC_SHIPPING_MODE;
 
+/**
+ * URL pubblico del sito.
+ *
+ * Serve a rendere assolute le immagini di anteprima: senza, i link condivisi
+ * in chat arrivano senza foto né titolo. Su Vercel il dominio di produzione
+ * viene rilevato da solo, in locale si ripiega su localhost.
+ */
+function resolveSiteUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
+  if (explicit) return explicit.replace(/\/$/, '');
+
+  const vercel = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercel) return `https://${vercel}`;
+
+  return 'http://localhost:3000';
+}
+
 export const shop = {
   name: process.env.NEXT_PUBLIC_SHOP_NAME || 'Atelier',
+  url: resolveSiteUrl(),
   /** Numero WhatsApp in formato internazionale, sole cifre. */
   whatsapp: (process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '393408857026').replace(/\D/g, ''),
   locale: 'it-IT',

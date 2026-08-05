@@ -61,6 +61,48 @@ Variabili d'ambiente (tutte facoltative, vedi `.env.example`):
 
 ---
 
+## Prima di andare online
+
+### Configurato dal codice (fatto)
+
+* metadati completi con `metadataBase`: i link condivisi in chat mostrano foto e titolo
+* favicon e immagine di anteprima generate a build time, nessun asset binario nel repo
+* `robots.txt` e `sitemap.xml` generati dal catalogo
+* dati strutturati schema.org (`Product` e `Organization`) per i risultati di ricerca
+* pagina 404, footer con i dati obbligatori, pagine *Come funziona*, *Contatti*,
+  *Privacy*, *Termini di vendita*
+
+### Da compilare (variabili d'ambiente su Vercel)
+
+| Variabile | Perché serve |
+|---|---|
+| `NEXT_PUBLIC_SITE_URL` | anteprime dei link e URL canonici; su Vercel è rilevato da solo |
+| `NEXT_PUBLIC_SHOP_NAME` | nome in header, metadati e favicon |
+| `NEXT_PUBLIC_WHATSAPP_PHONE` | numero che riceve gli ordini |
+| `NEXT_PUBLIC_LEGAL_NAME` `NEXT_PUBLIC_VAT` `NEXT_PUBLIC_ADDRESS` `NEXT_PUBLIC_CONTACT_EMAIL` | obblighi informativi (art. 17 D.lgs. 70/2003) |
+
+Finché i dati dell'attività mancano, le pagine legali mostrano un avviso di
+documento incompleto: è voluto, evita di pubblicare per sbaglio un'informativa
+che sembra completa e non lo è.
+
+### Da decidere fuori dal codice
+
+* partita IVA e comunicazione di inizio attività per il commercio elettronico
+* metodi di pagamento (il sito non ne elabora nessuno) e corriere con tempi reali
+* i punti marcati `DA COMPLETARE` in `app/come-funziona` e `app/termini`
+* far rileggere privacy e termini a un professionista: i testi qui sono una base
+  ragionata, non una consulenza
+* numero WhatsApp Business, non quello personale
+
+### Numerazione ordini condivisa (opzionale)
+
+Senza uno store KV il contatore è per browser: due clienti diversi possono
+ricevere lo stesso `ORD-2026-001`. Collegando uno store Redis/KV dal pannello
+Vercel, `/api/order-number` usa `INCR` e la numerazione diventa globale — il
+codice c'è già e si attiva da solo quando trova le variabili.
+
+---
+
 ## 1. Scraper (Python)
 
 ```

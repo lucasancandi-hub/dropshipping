@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 
 import { AddToCart } from '@/components/AddToCart';
 import { Gallery } from '@/components/Gallery';
+import { JsonLd, productSchema } from '@/components/JsonLd';
 import { ProductCard } from '@/components/ProductCard';
 import { getProductBySlug, getProducts, getRelated } from '@/lib/catalog';
 
@@ -23,10 +24,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: product.title,
     description: product.shortDescription || product.description || product.title,
+    alternates: { canonical: `/prodotto/${product.slug}` },
     openGraph: {
       title: product.title,
       description: product.shortDescription || product.title,
       images: product.images.slice(0, 1),
+      url: `/prodotto/${product.slug}`,
       type: 'website',
     },
   };
@@ -42,6 +45,8 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <>
+      <JsonLd data={productSchema(product)} />
+
       <nav className="mb-6 text-sm text-neutral-500">
         <Link href="/" className="hover:underline">
           Catalogo
