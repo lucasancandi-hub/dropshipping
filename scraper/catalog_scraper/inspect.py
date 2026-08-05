@@ -38,9 +38,25 @@ SOLDOUT_HINTS = ("sold", "esaur", "out-of-stock", "unavailable", "nondisponibile
 NOISE_HINTS = ("cart", "carrello", "wishlist", "compare", "quick", "badge-new")
 
 
+# Una classe utilizzabile in un selettore CSS senza escape.
+# Esclude le utility Tailwind con valore arbitrario (mt-[12px], w-1/2, top-1/2):
+# le parentesi quadre e le barre romperebbero il parser dei selettori, e sono
+# comunque classi di impaginazione, non di struttura.
+_CSS_CLASS = re.compile(r"^[A-Za-z_-][A-Za-z0-9_-]*$")
+
+
+def usable_classes(node: Tag) -> list[str]:
+    """Classi dell'elemento buone per costruire un selettore."""
+    return [
+        c
+        for c in (node.get("class") or [])
+        if not c.startswith("js-") and _CSS_CLASS.match(c)
+    ]
+
+
 def signature(node: Tag, max_classes: int = 3) -> str:
     """Firma CSS di un elemento: `li.card.product`. Senza classi, solo il tag."""
-    classes = [c for c in (node.get("class") or []) if not c.startswith("js-")]
+    classes = usable_classes(node)
     if not classes:
         return node.name
     return node.name + "".join(f".{c}" for c in classes[:max_classes])
@@ -137,7 +153,7 @@ def detect_card(soup: BeautifulSoup, min_occurrences: int = 3) -> tuple[str, lis
 
 def _relative_selector(card: Tag, node: Tag) -> str:
     """Selettore del nodo relativo alla card: preferisce le classi, poi il tag."""
-    classes = [c for c in (node.get("class") or []) if not c.startswith("js-")]
+    classes = usable_classes(node)
     if classes:
         candidate = "." + classes[0]
         if len(card.select(candidate)) == 1:
@@ -151,7 +167,7 @@ def _relative_selector(card: Tag, node: Tag) -> str:
 def _hinted(card: Tag, hints: tuple[str, ...]) -> Tag | None:
     """Primo elemento le cui classi contengono uno degli indizi."""
     for node in card.find_all(True):
-        blob = " ".join(node.get("class") or []).lower()
+        blob = " ".join(usable_classes(node)).lower()
         if not blob or any(noise in blob for noise in NOISE_HINTS):
             continue
         if any(hint in blob for hint in hints):

@@ -134,3 +134,33 @@ def test_write_config_su_file_senza_blocco_selettori(tmp_path):
     testo = config.read_text(encoding="utf-8")
     assert "name: prova" in testo
     assert "selectors:" in testo
+
+
+def test_classi_tailwind_arbitrarie_non_rompono_i_selettori():
+    """`mt-[12px]` o `w-1/2` non sono identificatori CSS validi.
+
+    Finivano dentro i selettori generati e facevano esplodere il parser di
+    soupsieve: vanno scartate, sono comunque classi di impaginazione.
+    """
+    from catalog_scraper.inspect import signature, usable_classes
+
+    html = """
+    <div class="grid">
+      <div class="card mt-[12px] w-1/2"><a href="/a"><img src="/1.jpg"></a>
+        <h3 class="font-bold">Uno</h3><div class="price"><span>10,00 €</span></div></div>
+      <div class="card mt-[12px] w-1/2"><a href="/b"><img src="/2.jpg"></a>
+        <h3 class="font-bold">Due</h3><div class="price"><span>20,00 €</span></div></div>
+      <div class="card mt-[12px] w-1/2"><a href="/c"><img src="/3.jpg"></a>
+        <h3 class="font-bold">Tre</h3><div class="price"><span>30,00 €</span></div></div>
+    </div>"""
+
+    documento = BeautifulSoup(html, "lxml")
+    carta = documento.select_one(".card")
+
+    assert usable_classes(carta) == ["card"]
+    assert signature(carta) == "div.card"
+
+    # Non deve sollevare SelectorSyntaxError
+    selettore, cards = detect_card(documento)
+    assert selettore == "div.card"
+    assert len(cards) == 3
