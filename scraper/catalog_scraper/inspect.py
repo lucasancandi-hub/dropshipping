@@ -286,6 +286,46 @@ def report(html: str, source: str, limit: int = 3) -> str:
     return "\n".join(lines)
 
 
+def merge_into_config(path: Path, selectors: dict[str, str], next_selector: str = "") -> str:
+    """Sostituisce il blocco `selectors:` nel file di configurazione.
+
+    Lavora sul testo e non sull'albero YAML apposta: ricaricare e riscrivere
+    con PyYAML cancellerebbe tutti i commenti del file, che qui servono.
+    """
+    testo = path.read_text(encoding="utf-8")
+    righe = testo.splitlines()
+
+    blocco = ["selectors:"]
+    for chiave in ("product_card", "title", "url", "price", "sale_price", "image", "category", "sku", "out_of_stock_flag"):
+        if chiave in selectors:
+            blocco.append(f'  {chiave}: "{selectors[chiave]}"')
+
+    inizio = next((i for i, r in enumerate(righe) if re.match(r"^selectors:\s*$", r)), None)
+
+    if inizio is None:
+        righe += ["", *blocco]
+    else:
+        fine = inizio + 1
+        while fine < len(righe) and (righe[fine].startswith((" ", "\t")) or not righe[fine].strip()):
+            fine += 1
+        # Non inghiottire i commenti che introducono la sezione successiva.
+        while fine > inizio + 1 and not righe[fine - 1].strip():
+            fine -= 1
+        righe[inizio:fine] = blocco
+
+    # Il selettore di paginazione, se trovato, va aggiornato dov'è.
+    if next_selector:
+        for i, riga in enumerate(righe):
+            if "next_selector:" in riga:
+                indent = riga[: len(riga) - len(riga.lstrip())]
+                righe[i] = f'{indent}next_selector: "{next_selector}"'
+                break
+
+    nuovo = "\n".join(righe) + "\n"
+    path.write_text(nuovo, encoding="utf-8")
+    return "\n".join(blocco)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="catalog_scraper.inspect",
@@ -295,6 +335,11 @@ def main(argv: list[str] | None = None) -> int:
     source.add_argument("--html-file", help="Pagina salvata in locale")
     source.add_argument("--url", help="Scarica la pagina (rispetta robots.txt)")
     parser.add_argument("--limit", type=int, default=3, help="Prodotti in anteprima")
+    parser.add_argument(
+        "--write-config",
+        metavar="FILE",
+        help="Scrive i selettori trovati dentro questo file di configurazione",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -314,6 +359,23 @@ def main(argv: list[str] | None = None) -> int:
         origin = args.url
 
     print(report(html, origin, args.limit))
+
+    if args.write_config:
+        destinazione = Path(args.write_config)
+        if not destinazione.exists():
+            logger.error("File di configurazione inesistente: %s", destinazione)
+            return 2
+
+        soup = BeautifulSoup(html, "lxml")
+        selettore, cards = detect_card(soup)
+        if not selettore or not cards:
+            logger.error("Nessun selettore da scrivere: la griglia non è stata riconosciuta.")
+            return 1
+
+        trovati = {"product_card": selettore, **guess_selectors(cards)}
+        merge_into_config(destinazione, trovati, detect_pagination(soup))
+        print(f"\nSelettori scritti in {destinazione}. Rileggili prima di lanciare lo scraper.")
+
     return 0
 
 

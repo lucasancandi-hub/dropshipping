@@ -68,3 +68,69 @@ def test_pagina_senza_griglia_spiega_il_problema():
 
     assert "Nessuna griglia riconosciuta" in testo
     assert "selenium" in testo         # suggerisce la causa più comune
+
+
+# --------------------------------------------------------------------------- #
+# Scrittura dei selettori nel file di configurazione
+# --------------------------------------------------------------------------- #
+def test_write_config_sostituisce_solo_i_selettori(tmp_path):
+    """I commenti del file di configurazione devono sopravvivere."""
+    from catalog_scraper.inspect import merge_into_config
+
+    config = tmp_path / "config.yaml"
+    config.write_text(
+        "\n".join(
+            [
+                "# commento iniziale",
+                "site:",
+                '  name: prova',
+                "  pagination:",
+                '    next_selector: "VECCHIO"',
+                "",
+                "# commento sopra i selettori",
+                "selectors:",
+                '  product_card: "DA_RILEVARE"',
+                '  title: "DA_RILEVARE"',
+                "",
+                "# commento finale",
+                "pricing:",
+                "  markup_percent: 60",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    _, cards = detect_card(soup_catalogo())
+    merge_into_config(
+        config,
+        {"product_card": "article.product-item", **guess_selectors(cards)},
+        ".pager__next",
+    )
+
+    testo = config.read_text(encoding="utf-8")
+
+    assert 'product_card: "article.product-item"' in testo
+    assert 'title: ".product-item__title"' in testo
+    assert "DA_RILEVARE" not in testo
+    # Tutto il resto resta dov'era
+    assert "# commento iniziale" in testo
+    assert "# commento sopra i selettori" in testo
+    assert "# commento finale" in testo
+    assert "markup_percent: 60" in testo
+    assert 'next_selector: ".pager__next"' in testo
+    assert "VECCHIO" not in testo
+
+
+def test_write_config_su_file_senza_blocco_selettori(tmp_path):
+    from catalog_scraper.inspect import merge_into_config
+
+    config = tmp_path / "config.yaml"
+    config.write_text("site:\n  name: prova\n", encoding="utf-8")
+
+    _, cards = detect_card(soup_catalogo())
+    merge_into_config(config, {"product_card": "article.product-item", **guess_selectors(cards)})
+
+    testo = config.read_text(encoding="utf-8")
+    assert "name: prova" in testo
+    assert "selectors:" in testo
