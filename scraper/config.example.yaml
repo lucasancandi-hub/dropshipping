@@ -1,0 +1,78 @@
+# =============================================================================
+# Configurazione di esempio - catalogo a griglia (card con immagine + prezzo)
+# Copia in config.yaml e adatta i selettori CSS al sito sorgente.
+# Suggerimento: ispeziona una card nel browser (F12) e copia il selettore.
+# =============================================================================
+
+site:
+  name: catalogo-demo
+  base_url: "https://esempio-store.com"
+  catalog_url: "https://esempio-store.com/collezioni/tutti"
+  pagination:
+    mode: query          # none | query (?page=N) | link (segue next_selector)
+    param: page
+    start: 1
+    step: 1
+    max_pages: 5
+    next_selector: "a.pagination__next"
+
+# --- Selettori della pagina griglia ------------------------------------------
+selectors:
+  product_card: "ul.product-grid li.card"      # contenitore di ogni prodotto
+  title: ".card__heading"
+  url: "a.card__link"                          # relativo alla card
+  price: ".price__regular .money"
+  sale_price: ".price__sale .money"            # opzionale
+  image: ".card__media img"                    # tutte le <img> della card
+  category: ".card__vendor"                    # opzionale
+  sku: "[data-sku]"                            # opzionale
+  out_of_stock_flag: ".badge--sold-out"        # se presente -> non disponibile
+
+# --- Scheda prodotto: galleria completa + varianti ---------------------------
+detail:
+  enabled: true
+  gallery: ".product__media-list img"
+  variants: "select[name='Taglia'] option, .variant-swatch input"
+  variant_attribute: "Taglia"                  # nome attributo in WooCommerce
+  description: ".product__description"
+  short_description: ".product__subtitle"
+  sku: ".product__sku"
+  price: ".product__price .money"
+  max_products: 0                              # 0 = tutti
+
+# --- Trasporto ---------------------------------------------------------------
+http:
+  engine: requests       # requests (HTML statico) | selenium (JS / lazy load)
+  user_agent: "Mozilla/5.0 (compatible; CatalogScraper/1.0)"
+  timeout: 20
+  delay: 1.5             # secondi fra due richieste: non martellare il server
+  retries: 3
+  respect_robots: true
+  headers: {}
+  # Solo engine: selenium
+  headless: true
+  wait_selector: "ul.product-grid li.card"
+  wait_timeout: 15
+  scroll: false          # true per cataloghi a scroll infinito
+  scroll_pause: 1.0
+  scroll_max: 10
+
+# --- Normalizzazione ---------------------------------------------------------
+parsing:
+  decimal_separator: ""       # "" = autodetect ("," per l'Italia)
+  thousands_separator: ""
+  currency: "EUR"
+  default_category: "Novità"
+  sku_prefix: "DS"
+  image_attributes: ["data-srcset", "srcset", "data-src", "src"]
+
+# --- Import diretto via REST API (usato solo con --push) ---------------------
+# Le chiavi restano nell'ambiente: export WOO_CONSUMER_KEY=ck_...
+woocommerce:
+  url: "https://iltuoshop.it"
+  consumer_key: "${WOO_CONSUMER_KEY}"
+  consumer_secret: "${WOO_CONSUMER_SECRET}"
+  status: publish             # publish | draft | pending
+  manage_stock: false
+  timeout: 30
+  verify_ssl: true

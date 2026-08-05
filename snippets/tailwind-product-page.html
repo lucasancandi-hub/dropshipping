@@ -1,0 +1,152 @@
+<!--
+  ============================================================================
+  Variante Tailwind della scheda prodotto "chat-first"
+  ============================================================================
+  Mockup statico da usare come riferimento per un tema headless / block theme,
+  o da incollare in un template Woo sovrascritto. Equivalente a
+  assets/css/wclg-frontend.css, ma in utility class.
+
+  Prerequisito: Tailwind attivo sul tema (via build o CDN in fase di prototipo).
+  Le classi in `safelist` servono se generi il markup da PHP:
+    safelist: ['bg-[#25d366]', 'hover:bg-[#128c7e]', 'aspect-[3/4]']
+-->
+
+<main class="mx-auto max-w-6xl px-4 py-8 text-neutral-900 dark:text-neutral-100">
+
+  <!-- ====================================================================
+       SCHEDA PRODOTTO: galleria a sinistra, dati + CTA sticky a destra
+       ==================================================================== -->
+  <div class="grid grid-cols-1 gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
+
+    <!-- Galleria: griglia responsive, 1 colonna su mobile, 2 da tablet -->
+    <section class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <img
+        src="/img/felpa-fronte.jpg" alt="Felpa oversize nera, fronte"
+        class="col-span-full aspect-[4/5] w-full rounded-2xl bg-neutral-100 object-cover"
+        loading="eager" decoding="async">
+      <img src="/img/felpa-retro.jpg" alt="Retro"
+        class="aspect-square w-full rounded-2xl bg-neutral-100 object-cover" loading="lazy">
+      <img src="/img/felpa-dettaglio.jpg" alt="Dettaglio tessuto"
+        class="aspect-square w-full rounded-2xl bg-neutral-100 object-cover" loading="lazy">
+    </section>
+
+    <!-- Colonna informazioni: resta visibile mentre si scorrono le immagini -->
+    <section class="lg:sticky lg:top-6 lg:self-start">
+
+      <p class="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Felpe</p>
+
+      <h1 class="mt-1 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+        Felpa Oversize Nera
+      </h1>
+
+      <div class="mt-3 flex items-baseline gap-3">
+        <span class="text-2xl font-semibold" data-price>€ 59,90</span>
+        <span class="text-base text-neutral-400 line-through">€ 79,90</span>
+        <span class="rounded-full bg-neutral-900 px-2.5 py-1 text-xs font-medium text-white dark:bg-white dark:text-neutral-900">-25%</span>
+      </div>
+
+      <p class="mt-4 max-w-prose text-[15px] leading-relaxed text-neutral-600 dark:text-neutral-300">
+        Cotone pesante 400 g/m², vestibilità oversize, cuciture rinforzate.
+      </p>
+
+      <!-- Taglie: swatch tap-friendly (min 44px, requisito WCAG target size) -->
+      <fieldset class="mt-6">
+        <legend class="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Taglia</legend>
+        <div class="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label="Taglia">
+          <label class="cursor-pointer">
+            <input type="radio" name="taglia" value="S" class="peer sr-only">
+            <span class="flex h-12 min-w-12 items-center justify-center rounded-xl border border-neutral-200 px-4 text-sm font-medium transition
+                         hover:border-neutral-900 peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white
+                         peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-700
+                         dark:border-neutral-700 dark:peer-checked:bg-white dark:peer-checked:text-neutral-900">S</span>
+          </label>
+          <label class="cursor-pointer">
+            <input type="radio" name="taglia" value="M" class="peer sr-only" checked>
+            <span class="flex h-12 min-w-12 items-center justify-center rounded-xl border border-neutral-200 px-4 text-sm font-medium transition
+                         hover:border-neutral-900 peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white
+                         dark:border-neutral-700 dark:peer-checked:bg-white dark:peer-checked:text-neutral-900">M</span>
+          </label>
+          <label class="cursor-not-allowed">
+            <input type="radio" name="taglia" value="XL" class="peer sr-only" disabled>
+            <span class="flex h-12 min-w-12 items-center justify-center rounded-xl border border-dashed border-neutral-200 px-4 text-sm
+                         text-neutral-300 line-through dark:border-neutral-800 dark:text-neutral-600">XL</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <!-- CTA: unica azione della pagina -->
+      <div class="mt-7 flex flex-wrap items-center gap-3">
+
+        <div class="inline-flex h-14 items-center rounded-full border border-neutral-200 dark:border-neutral-700">
+          <button type="button" aria-label="Diminuisci quantità"
+            class="h-full w-11 rounded-l-full text-lg transition hover:bg-neutral-100 dark:hover:bg-neutral-800">−</button>
+          <input type="number" value="1" min="1" inputmode="numeric" aria-label="Quantità"
+            class="h-full w-12 border-0 bg-transparent text-center text-base font-semibold [appearance:textfield] focus:outline-none
+                   [&::-webkit-inner-spin-button]:appearance-none">
+          <button type="button" aria-label="Aumenta quantità"
+            class="h-full w-11 rounded-r-full text-lg transition hover:bg-neutral-100 dark:hover:bg-neutral-800">+</button>
+        </div>
+
+        <a href="https://api.whatsapp.com/send?phone=393401234567&amp;text=..."
+           target="_blank" rel="noopener nofollow" data-wclg-action="chat"
+           class="inline-flex h-14 flex-1 basis-60 items-center justify-center gap-2.5 rounded-full bg-[#25d366] px-7
+                  text-base font-semibold text-white shadow-lg shadow-[#25d366]/30 transition
+                  hover:-translate-y-0.5 hover:bg-[#128c7e] hover:shadow-xl active:translate-y-0
+                  focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-blue-700
+                  motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+          <svg viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.87 9.87 0 004.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0012.04 2z"/>
+          </svg>
+          Ordina via WhatsApp
+        </a>
+
+        <p class="w-full text-[13px] text-neutral-500">Risposta in pochi minuti · Nessun pagamento online</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ====================================================================
+       GRIGLIA CATALOGO
+       ==================================================================== -->
+  <section class="mt-16">
+    <h2 class="mb-5 text-xl font-semibold tracking-tight">Novità</h2>
+
+    <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <li class="group">
+        <a href="/prodotto/jeans-cargo-beige" class="block overflow-hidden rounded-2xl bg-neutral-100">
+          <img src="/img/jeans.jpg" alt="Jeans cargo beige" loading="lazy"
+            class="aspect-[3/4] w-full object-cover transition duration-500 group-hover:scale-[1.03] motion-reduce:transition-none">
+        </a>
+        <div class="mt-2.5">
+          <h3 class="text-[15px] font-medium leading-snug">
+            <a href="/prodotto/jeans-cargo-beige" class="hover:underline">Jeans Cargo Beige</a>
+          </h3>
+          <p class="mt-0.5 text-[15px] font-semibold">€ 89,00</p>
+          <a href="/prodotto/jeans-cargo-beige"
+             class="mt-2.5 inline-flex h-10 w-full items-center justify-center rounded-full bg-[#25d366] px-4 text-sm font-semibold text-white
+                    transition hover:bg-[#128c7e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+            Ordina in chat
+          </a>
+        </div>
+      </li>
+    </ul>
+  </section>
+</main>
+
+<!-- ======================================================================
+     CTA FISSA MOBILE (nascosta da lg in su)
+     ====================================================================== -->
+<div class="fixed inset-x-0 bottom-0 z-50 flex items-center gap-3 border-t border-neutral-200 bg-white/95 px-4 py-2.5
+            pb-[calc(0.625rem+env(safe-area-inset-bottom))] backdrop-blur-md lg:hidden
+            dark:border-neutral-800 dark:bg-neutral-900/95" data-wclg-sticky>
+  <div class="min-w-0 leading-tight">
+    <p class="truncate text-sm font-semibold">Felpa Oversize Nera</p>
+    <p class="text-sm text-neutral-500">€ 59,90</p>
+  </div>
+  <a href="https://api.whatsapp.com/send?phone=393401234567&amp;text=..."
+     target="_blank" rel="noopener nofollow" data-wclg-sticky-link
+     class="ml-auto inline-flex h-11 shrink-0 items-center rounded-full bg-[#25d366] px-6 text-sm font-semibold text-white
+            transition hover:bg-[#128c7e]">
+    Ordina ora
+  </a>
+</div>

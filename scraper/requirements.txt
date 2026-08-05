@@ -1,0 +1,7 @@
+beautifulsoup4>=4.12
+lxml>=5.0
+requests>=2.31
+PyYAML>=6.0
+
+# Opzionale: solo per http.engine = selenium (cataloghi renderizzati in JS)
+# selenium>=4.20

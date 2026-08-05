@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="utf-8"><title>Catalogo demo</title></head>
+<body>
+  <main>
+    <ul class="product-grid">
+      <li class="card">
+        <a class="card__link" href="/prodotti/felpa-oversize-nera">
+          <div class="card__media">
+            <picture>
+              <source srcset="/img/felpa-400.jpg 400w, /img/felpa-1200.jpg 1200w">
+              <img src="data:image/gif;base64,R0lGOD" data-src="/img/felpa-800.jpg" alt="Felpa">
+            </picture>
+          </div>
+        </a>
+        <div class="card__info">
+          <span class="card__vendor">Felpe</span>
+          <h3 class="card__heading">Felpa Oversize Nera</h3>
+          <div class="price">
+            <span class="price__regular"><span class="money">€ 79,90</span></span>
+            <span class="price__sale"><span class="money">€ 59,90</span></span>
+          </div>
+        </div>
+      </li>
+
+      <li class="card">
+        <a class="card__link" href="/prodotti/jeans-cargo-beige">
+          <div class="card__media">
+            <img class="lazy" data-srcset="/img/jeans-500.jpg 500w, /img/jeans-1000.jpg 1000w" alt="Jeans">
+          </div>
+        </a>
+        <div class="card__info">
+          <span class="card__vendor">Pantaloni</span>
+          <h3 class="card__heading">Jeans Cargo Beige</h3>
+          <div class="price">
+            <span class="price__regular"><span class="money">€ 1.249,00</span></span>
+          </div>
+        </div>
+      </li>
+
+      <li class="card">
+        <a class="card__link" href="/prodotti/tshtirt-boxy-white">
+          <div class="card__media">
+            <img src="/img/tee.jpg" alt="T-shirt">
+          </div>
+        </a>
+        <div class="card__info">
+          <span class="badge badge--sold-out">Esaurito</span>
+          <span class="card__vendor">T-Shirt</span>
+          <h3 class="card__heading">T-Shirt Boxy Bianca</h3>
+          <div class="price">
+            <span class="price__regular"><span class="money">$29.99</span></span>
+          </div>
+        </div>
+      </li>
+
+      <!-- Card placeholder dello slider: deve essere scartata -->
+      <li class="card card--placeholder">
+        <div class="card__info"><h3 class="card__heading"></h3></div>
+      </li>
+    </ul>
+
+    <nav class="pagination">
+      <a class="pagination__next" href="/collezioni/tutti?page=2">Successiva</a>
+    </nav>
+  </main>
+</body>
+</html>
