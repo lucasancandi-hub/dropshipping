@@ -1,16 +1,16 @@
 # Dropshipping — catalogo WooCommerce con chiusura ordine in chat
 
 Architettura e-commerce "chat-first": WooCommerce serve come catalogo e motore
-prodotti, ma carrello e checkout sono disaccoppiati. L'ordine si chiude su
-WhatsApp (o Telegram) con un messaggio già scritto che contiene prodotto,
-prezzo, taglia e link.
+prodotti, ma il checkout è disaccoppiato. L'ordine si chiude su WhatsApp (o
+Telegram) con un messaggio già scritto — articoli, taglie, quantità, spedizione
+stimata e numero d'ordine progressivo.
 
 Due componenti indipendenti:
 
 | Componente | Percorso | Cosa fa |
 |---|---|---|
 | **Data ingestion** | `scraper/` | Estrae il catalogo da una pagina a griglia e lo porta in WooCommerce via CSV o REST API |
-| **Frontend Woo** | `wp-content/plugins/woo-chat-lead-gen/` | Disattiva carrello/pagamenti e sostituisce "Aggiungi al carrello" con il CTA chat |
+| **Frontend Woo** | `wp-content/plugins/woo-chat-lead-gen/` | Disattiva i pagamenti, gestisce carrello/drawer e invia l'ordine in chat con numero progressivo |
 | Alternative | `snippets/` | Versione compatta per `functions.php` + mockup Tailwind |
 
 ---
@@ -102,10 +102,22 @@ Plugin `Woo Chat Lead Gen` — `wp-content/plugins/woo-chat-lead-gen/`.
 1. Copia la cartella `woo-chat-lead-gen` in `wp-content/plugins/` (o caricala
    come ZIP).
 2. Attiva il plugin.
-3. **WooCommerce → Chat Lead Gen**: inserisci il numero in formato
-   internazionale senza `+` (es. `393401234567`) e salva.
+3. **WooCommerce → Chat Lead Gen**: scegli il flusso, controlla il numero
+   (preimpostato su `393408857026`) e salva.
 
-### a) Carrello e pagamenti disattivati
+### Due flussi d'ordine
+
+| | **Carrello** (default) | **Diretto** |
+|---|---|---|
+| Aggiungi al carrello | attivo | rimosso |
+| Scheda prodotto | pulsante nativo + link chat discreto | CTA chat con taglia e prezzo |
+| Chiusura ordine | dal carrello, ordine completo con numero progressivo | un prodotto per conversazione |
+| Checkout / pagamenti | disattivati | disattivati |
+
+Il flusso si cambia da **WooCommerce → Chat Lead Gen → Flusso d'ordine**: le
+due modalità coesistono nel codice, non si escludono a livello di file.
+
+### a) Carrello e pagamenti disattivati (flusso diretto)
 
 Il blocco è server-side, non solo estetico (`class-wclg-catalog-mode.php`):
 
@@ -166,6 +178,109 @@ prodotto padre (progressive enhancement).
 Al click viene emesso `wclg_chat_click` su `window.dataLayer` (GA4/GTM) e un
 evento DOM `wclg:click`.
 
+---
+
+## 2b. Flusso carrello: riepilogo, spedizione, numero d'ordine
+
+Attivo di default. Il carrello WooCommerce resta quello nativo — righe,
+quantità, varianti — ma perde la parte transazionale e guadagna il riepilogo
+da chat.
+
+### Carrello e drawer
+
+* **Pagina carrello**: `woocommerce_button_proceed_to_checkout` è sostituito
+  dal CTA "Invia ordine su WhatsApp"; il calcolatore di spedizione nativo è
+  nascosto (la stima è la nostra) e i cross-sell rimossi.
+* **Drawer laterale** (`cart_drawer`): pannello che si apre da un pulsante
+  flottante con contatore, si apre da solo dopo un add-to-cart AJAX, si chiude
+  con ESC o backdrop e mantiene il focus al suo interno. Il contenuto è il
+  mini carrello dentro un `div.widget_shopping_cart_content`, quindi **i
+  frammenti AJAX di WooCommerce lo aggiornano da soli**: nessun polling, nessun
+  endpoint custom.
+* **Checkout**: reindirizzato al carrello; i gateway di pagamento restano
+  disattivati.
+
+### Prezzi e "da concordare"
+
+Un prodotto è a prezzo da concordare se l'admin spunta la casella **Prezzo da
+concordare** (scheda prodotto e singola variazione) **oppure** se non ha
+prezzo. In quel caso:
+
+* al posto del prezzo compare l'etichetta configurabile;
+* il prodotto resta aggiungibile al carrello — WooCommerce lo considererebbe
+  non acquistabile, il filtro `woocommerce_is_purchasable` lo riabilita, perché
+  qui il carrello è una lista di richiesta, non una transazione;
+* nel messaggio la riga riporta "Prezzo da concordare in chat" e il totale
+  viene marcato `(+ voci da concordare)`.
+
+### Stima di spedizione
+
+Cinque modalità (`shipping_mode`): tariffa fissa, base + tariffa per articolo,
+base + tariffa al kg, spedizioni native WooCommerce, sempre da concordare.
+Tutte rispettano la soglia di spedizione gratuita.
+
+```
+base 3,00 € + 2,00 €/articolo · 4 pezzi  →  11,00 €
+subtotale 237,90 € con soglia gratis a 99 €  →  Gratuita
+```
+
+### Numero d'ordine progressivo
+
+`ORD-2026-001`, azzerato ogni anno, prefisso e cifre configurabili.
+
+L'incremento usa `UPDATE … SET option_value = LAST_INSERT_ID(option_value + 1)`:
+lettura e incremento avvengono **in una sola istruzione SQL**, quindi due
+richieste simultanee non possono ricevere lo stesso numero — cosa che invece
+succede con `get_option()` + `update_option()`.
+
+Il codice è legato al contenuto del carrello tramite un hash in sessione:
+riaprire la chat senza aver toccato il carrello riusa lo stesso numero, e non
+crea un ordine doppione.
+
+Con `create_order` attivo la richiesta viene registrata come **ordine
+WooCommerce** nello stato dedicato *"In attesa in chat"*, con le righe prodotto,
+la spedizione stimata e una nota; in elenco ordini il numero mostrato è
+`ORD-2026-001` (filtro `woocommerce_order_number`). Nessun dato di fatturazione:
+si raccoglie in conversazione.
+
+### Il messaggio
+
+```
+🛒 *Nuovo Ordine #ORD-2026-001*
+----------------------------------
+• Felpa Oversize Nera - Taglia: M - Q.tà: 1 - Prezzo: € 59,90
+• Jeans Cargo Beige - Taglia: L - Q.tà: 2 - Prezzo: € 178,00
+• Cappello in feltro - Q.tà: 1 - Prezzo: Prezzo da concordare in chat
+----------------------------------
+📦 Spedizione: € 7,90
+💰 *Totale Stimato: € 245,80 (+ voci da concordare)*
+
+Ciao! Vorrei confermare questo ordine.
+```
+
+Nota la terza riga: il segmento `Taglia:` **sparisce** sui prodotti senza
+varianti. Le righe articolo usano `WCLG_Message::render_line()`, che scarta i
+segmenti con segnaposto vuoti invece dell'intera riga. Lo split avviene sul
+template e mai sui valori, quindi un nome prodotto che contiene " - " non rompe
+il formato.
+
+Segnaposto messaggio: `{order}` `{items}` `{subtotal}` `{shipping}` `{total}`
+`{count}` `{url}` `{shop}` — riga articolo: `{name}` `{variant}` `{qty}`
+`{price}` `{sku}`.
+
+### Perché senza JavaScript
+
+Il pulsante del carrello è un link normale verso `?wclg_order=1` con nonce,
+intercettato su `template_redirect`: il gestore genera il codice, registra
+l'ordine e fa un `302` verso `api.whatsapp.com`. Niente `window.open()` da
+callback asincrone — quindi niente popup bloccati dal browser — e il flusso
+funziona anche a JavaScript disattivato. Il nonce tiene fuori i crawler: nessun
+ordine fantasma creato dai bot.
+
+> Se usi un plugin di cache a pagina intera, escludi carrello e mini-cart dalla
+> cache (tutti lo fanno di default per WooCommerce): il nonce nel link scade
+> con la pagina servita da cache.
+
 ### Estendere senza toccare il plugin
 
 ```php
@@ -177,7 +292,10 @@ add_filter( 'wclg_message_vars', function ( $vars, $product ) {
 ```
 
 Altri filtri: `wclg_message_text`, `wclg_chat_url`, `wclg_button_label`,
-`wclg_reassurance_text`, `wclg_cart_redirect_url`, `wclg_settings`.
+`wclg_reassurance_text`, `wclg_cart_redirect_url`, `wclg_settings`,
+`wclg_cart_items`, `wclg_cart_message_vars`, `wclg_cart_message_text`,
+`wclg_shipping_estimate`, `wclg_order_code`, `wclg_is_price_on_request`.
+Azioni: `wclg_order_created`, `wclg_before_chat_redirect`.
 
 Shortcode: `[wclg_chat_button id="123" label="Ordina ora"]`.
 
@@ -223,12 +341,20 @@ pagina catalogo sorgente
         └────────► REST API v3 (upsert per SKU) ──► prodotti + varianti
                                                           │
                                                           ▼
-                                          WooCommerce in modalità catalogo
+                                          WooCommerce senza pagamenti
                                                           │
-                                     CTA "Ordina via WhatsApp" con messaggio
-                                     precompilato (prodotto, prezzo, taglia)
-                                                          ▼
-                                                   conversazione = lead
+                          ┌───────────────────────────────┴──────────────────┐
+                    flusso CARRELLO                                 flusso DIRETTO
+                          │                                                  │
+              add-to-cart → drawer/carrello                    CTA sulla scheda prodotto
+              riepilogo + spedizione stimata                   (prodotto, prezzo, taglia)
+                          │                                                  │
+              ORD-2026-001 + ordine in bacheca                                │
+                          └───────────────────┬──────────────────────────────┘
+                                              ▼
+                              messaggio WhatsApp precompilato
+                                              ▼
+                                      conversazione = lead
 ```
 
 ## Requisiti

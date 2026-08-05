@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Woo Chat Lead Gen
  * Plugin URI:        https://github.com/lucasancandi-hub/dropshipping
- * Description:       Trasforma WooCommerce in un catalogo per lead generation: disattiva carrello e pagamenti e sostituisce "Aggiungi al carrello" con un CTA "Ordina via WhatsApp" che precompila il messaggio con prodotto, prezzo e taglia selezionata.
- * Version:           1.0.0
+ * Description:       Trasforma WooCommerce in un catalogo per lead generation: disattiva i pagamenti e chiude l'ordine in chat. Due flussi: carrello con riepilogo, spedizione stimata e numero d'ordine progressivo inviato su WhatsApp, oppure contatto diretto dalla scheda prodotto.
+ * Version:           1.1.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Luca Sancandi
@@ -19,7 +19,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WCLG_VERSION', '1.0.0' );
+define( 'WCLG_VERSION', '1.1.0' );
 define( 'WCLG_FILE', __FILE__ );
 define( 'WCLG_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WCLG_URL', plugin_dir_url( __FILE__ ) );
@@ -74,8 +74,12 @@ final class WCLG_Plugin {
 
 		require_once WCLG_PATH . 'includes/class-wclg-settings.php';
 		require_once WCLG_PATH . 'includes/class-wclg-message.php';
+		require_once WCLG_PATH . 'includes/class-wclg-price.php';
+		require_once WCLG_PATH . 'includes/class-wclg-shipping.php';
 		require_once WCLG_PATH . 'includes/class-wclg-catalog-mode.php';
 		require_once WCLG_PATH . 'includes/class-wclg-frontend.php';
+		require_once WCLG_PATH . 'includes/class-wclg-cart.php';
+		require_once WCLG_PATH . 'includes/class-wclg-order.php';
 
 		load_plugin_textdomain( 'woo-chat-lead-gen', false, dirname( plugin_basename( WCLG_FILE ) ) . '/languages' );
 
@@ -85,8 +89,15 @@ final class WCLG_Plugin {
 			return;
 		}
 
+		WCLG_Price::instance();
 		WCLG_Catalog_Mode::instance();
 		WCLG_Frontend::instance();
+
+		// Carrello e numerazione ordini servono solo al flusso con carrello.
+		if ( 'cart' === WCLG_Settings::get( 'order_flow' ) ) {
+			WCLG_Order::instance();
+			WCLG_Cart::instance();
+		}
 	}
 
 	public function missing_woocommerce_notice() {

@@ -24,8 +24,21 @@ class WCLG_Catalog_Mode {
 		return self::$instance;
 	}
 
+	/**
+	 * Flusso attivo: 'cart' oppure 'direct'.
+	 *
+	 * @var string
+	 */
+	private $flow;
+
 	private function __construct() {
-		if ( WCLG_Settings::is( 'disable_cart' ) ) {
+		$this->flow = WCLG_Settings::get( 'order_flow', 'cart' );
+
+		if ( 'cart' === $this->flow ) {
+			// Il carrello serve: si disattiva solo la parte transazionale.
+			add_action( 'template_redirect', array( $this, 'redirect_checkout' ) );
+			$this->disable_payments();
+		} elseif ( WCLG_Settings::is( 'disable_cart' ) ) {
 			$this->disable_cart();
 			$this->disable_payments();
 		}
@@ -35,6 +48,22 @@ class WCLG_Catalog_Mode {
 		}
 
 		add_filter( 'body_class', array( $this, 'body_class' ) );
+	}
+
+	/**
+	 * Nel flusso carrello il checkout non esiste: si torna al riepilogo.
+	 */
+	public function redirect_checkout() {
+		if ( is_admin() || wp_doing_ajax() || ! function_exists( 'is_checkout' ) ) {
+			return;
+		}
+		// La pagina "ordine ricevuto" resta raggiungibile: è solo una conferma.
+		if ( ! is_checkout() || is_order_received_page() ) {
+			return;
+		}
+
+		wp_safe_redirect( wc_get_cart_url(), 302 );
+		exit;
 	}
 
 	/* --------------------------------------------------------------------- *
@@ -131,7 +160,8 @@ class WCLG_Catalog_Mode {
 	 */
 	public function body_class( $classes ) {
 		$classes[] = 'wclg-catalog-mode';
-		if ( WCLG_Settings::is( 'sticky_mobile' ) ) {
+		$classes[] = 'wclg-flow-' . $this->flow;
+		if ( 'direct' === $this->flow && WCLG_Settings::is( 'sticky_mobile' ) ) {
 			$classes[] = 'wclg-has-sticky-cta';
 		}
 		return $classes;

@@ -34,8 +34,28 @@ class WCLG_Frontend {
 		return self::$instance;
 	}
 
+	/**
+	 * Flusso attivo: 'cart' oppure 'direct'.
+	 *
+	 * @var string
+	 */
+	private $flow;
+
 	private function __construct() {
+		$this->flow = WCLG_Settings::get( 'order_flow', 'cart' );
+
 		add_action( 'wp_enqueue_scripts', array( $this, 'register_assets' ) );
+		add_shortcode( 'wclg_chat_button', array( $this, 'shortcode' ) );
+
+		if ( 'cart' === $this->flow ) {
+			// I pulsanti nativi restano: il carrello è parte del flusso.
+			// Sotto al form mettiamo solo un link discreto per le domande.
+			if ( WCLG_Settings::is( 'single_chat_link' ) ) {
+				add_action( 'woocommerce_after_add_to_cart_form', array( $this, 'render_inline_chat_link' ), 20 );
+			}
+			return;
+		}
+
 		add_action( 'wp', array( $this, 'setup_single_product' ) );
 
 		// Archivio / griglia prodotti.
@@ -45,8 +65,31 @@ class WCLG_Frontend {
 		if ( WCLG_Settings::is( 'sticky_mobile' ) ) {
 			add_action( 'wp_footer', array( $this, 'render_sticky_bar' ) );
 		}
+	}
 
-		add_shortcode( 'wclg_chat_button', array( $this, 'shortcode' ) );
+	/**
+	 * Link testuale alla chat sotto il pulsante "Aggiungi al carrello".
+	 *
+	 * Nel flusso carrello la conversione principale è l'aggiunta al carrello:
+	 * la chat resta disponibile per dubbi su taglie e disponibilità.
+	 */
+	public function render_inline_chat_link() {
+		global $product;
+		if ( ! $product instanceof WC_Product ) {
+			return;
+		}
+
+		$url = WCLG_Message::product_url( $product );
+		if ( '' === $url ) {
+			return;
+		}
+
+		printf(
+			'<p class="wclg-inline-chat"><a href="%1$s" rel="nofollow"%2$s>%3$s</a></p>',
+			esc_url( $url ),
+			WCLG_Settings::is( 'new_tab' ) ? ' target="_blank"' : '',
+			esc_html__( 'Dubbi sulla taglia o sulla disponibilità? Scrivici su WhatsApp', 'woo-chat-lead-gen' )
+		);
 	}
 
 	/* --------------------------------------------------------------------- *

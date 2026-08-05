@@ -191,4 +191,120 @@ class WCLG_Message {
 	public static function product_url( $product, $overrides = array() ) {
 		return self::build_url( self::build_message( $product, $overrides ) );
 	}
+
+	/* --------------------------------------------------------------------- *
+	 * Messaggio del carrello
+	 * --------------------------------------------------------------------- */
+
+	/**
+	 * Applica i segnaposto a una riga a segmenti, scartando quelli vuoti.
+	 *
+	 * Serve alle righe articolo: "• {name} - Taglia: {variant} - Q.tà: {qty}"
+	 * su un prodotto senza varianti deve perdere il pezzo "Taglia:", non
+	 * l'intera riga. Lo split avviene sul template, mai sui valori, quindi un
+	 * nome prodotto che contiene " - " non rompe nulla.
+	 *
+	 * @param string $template  Template della riga.
+	 * @param array  $vars      Valori.
+	 * @param string $separator Separatore dei segmenti.
+	 * @return string
+	 */
+	public static function render_line( $template, $vars, $separator = ' - ' ) {
+		$segments = explode( $separator, (string) $template );
+		$kept     = array();
+
+		foreach ( $segments as $segment ) {
+			if ( preg_match_all( '/\{([a-z_]+)\}/', $segment, $matches ) ) {
+				$filled = '';
+				foreach ( $matches[1] as $key ) {
+					$filled .= isset( $vars[ $key ] ) ? trim( (string) $vars[ $key ] ) : '';
+				}
+				if ( '' === $filled ) {
+					continue;
+				}
+			}
+
+			$replacements = array();
+			foreach ( $vars as $key => $value ) {
+				$replacements[ '{' . $key . '}' ] = $value;
+			}
+			$kept[] = strtr( $segment, $replacements );
+		}
+
+		return implode( $separator, $kept );
+	}
+
+	/**
+	 * Elenco articoli del carrello, una riga per prodotto.
+	 *
+	 * @return string
+	 */
+	public static function build_cart_items() {
+		$template = WCLG_Settings::get( 'cart_item_template' );
+		$lines    = array();
+
+		foreach ( WCLG_Cart::get_items() as $item ) {
+			$lines[] = self::render_line(
+				$template,
+				array(
+					'name'    => $item['name'],
+					'variant' => $item['variant'],
+					'qty'     => (string) $item['qty'],
+					'price'   => $item['price_label'],
+					'sku'     => $item['sku'],
+				)
+			);
+		}
+
+		return implode( "\n", $lines );
+	}
+
+	/**
+	 * Messaggio completo dell'ordine: intestazione, articoli, totali.
+	 *
+	 * @param string $code Codice ordine progressivo.
+	 * @return string
+	 */
+	public static function build_cart_message( $code ) {
+		$totals = WCLG_Cart::get_totals();
+
+		$vars = array(
+			'order'    => $code,
+			'items'    => self::build_cart_items(),
+			'subtotal' => $totals['subtotal_label'],
+			'shipping' => $totals['shipping']['label'],
+			'total'    => $totals['total_label'],
+			'count'    => (string) $totals['count'],
+			'shop'     => get_bloginfo( 'name' ),
+			'url'      => wc_get_cart_url(),
+		);
+
+		/**
+		 * Filtra i segnaposto del messaggio d'ordine.
+		 *
+		 * @param array  $vars Segnaposto.
+		 * @param string $code Codice ordine.
+		 */
+		$vars = apply_filters( 'wclg_cart_message_vars', $vars, $code );
+
+		$message = self::render_template( WCLG_Settings::get( 'cart_message_template' ), $vars );
+
+		/**
+		 * Filtra il messaggio d'ordine prima dell'encoding.
+		 *
+		 * @param string $message Messaggio in chiaro.
+		 * @param string $code    Codice ordine.
+		 */
+		return apply_filters( 'wclg_cart_message_text', $message, $code );
+	}
+
+	/**
+	 * URL chat con l'ordine del carrello già scritto.
+	 *
+	 * @param string $code Codice ordine.
+	 * @return string
+	 */
+	public static function cart_url( $code ) {
+		return self::build_url( self::build_cart_message( $code ) );
+	}
 }

@@ -50,20 +50,39 @@ class WCLG_Settings {
 	 */
 	public static function defaults() {
 		return array(
-			'enabled'            => 'yes',
-			'channel'            => 'whatsapp',
-			'phone'              => '',
-			'telegram_user'      => '',
-			'button_label'       => __( 'Ordina via WhatsApp', 'woo-chat-lead-gen' ),
-			'loop_button_label'  => __( 'Ordina in chat', 'woo-chat-lead-gen' ),
-			'loop_button_action' => 'product',
-			'message_template'   => self::default_template(),
-			'disable_cart'       => 'yes',
-			'hide_price'         => 'no',
-			'show_quantity'      => 'yes',
-			'sticky_mobile'      => 'yes',
-			'load_css'           => 'yes',
-			'new_tab'            => 'yes',
+			// Flusso: 'cart' = carrello + invio ordine, 'direct' = dal prodotto alla chat.
+			'order_flow'            => 'cart',
+			'enabled'               => 'yes',
+			'channel'               => 'whatsapp',
+			'phone'                 => '393408857026',
+			'telegram_user'         => '',
+			'button_label'          => __( 'Ordina via WhatsApp', 'woo-chat-lead-gen' ),
+			'loop_button_label'     => __( 'Ordina in chat', 'woo-chat-lead-gen' ),
+			'loop_button_action'    => 'product',
+			'message_template'      => self::default_template(),
+			'disable_cart'          => 'yes',
+			'hide_price'            => 'no',
+			'show_quantity'         => 'yes',
+			'sticky_mobile'         => 'yes',
+			'load_css'              => 'yes',
+			'new_tab'               => 'yes',
+			// Carrello chat.
+			'cart_button_label'     => __( 'Invia ordine su WhatsApp', 'woo-chat-lead-gen' ),
+			'cart_drawer'           => 'yes',
+			'single_chat_link'      => 'yes',
+			'cart_message_template' => self::default_cart_template(),
+			'cart_item_template'    => __( '• {name} - Taglia: {variant} - Q.tà: {qty} - Prezzo: {price}', 'woo-chat-lead-gen' ),
+			'price_request_label'   => __( 'Prezzo da concordare in chat', 'woo-chat-lead-gen' ),
+			// Numerazione ordini.
+			'order_prefix'          => 'ORD',
+			'order_digits'          => '3',
+			'create_order'          => 'yes',
+			// Spedizione.
+			'shipping_mode'         => 'flat',
+			'shipping_flat'         => '7.90',
+			'shipping_rate'         => '2.00',
+			'shipping_base'         => '0',
+			'shipping_free_over'    => '99',
 		);
 	}
 
@@ -88,6 +107,27 @@ class WCLG_Settings {
 				__( 'Codice: {sku}', 'woo-chat-lead-gen' ),
 				'',
 				'{url}',
+			)
+		);
+	}
+
+	/**
+	 * Template del messaggio d'ordine generato dal carrello.
+	 *
+	 * @return string
+	 */
+	public static function default_cart_template() {
+		return implode(
+			"\n",
+			array(
+				__( '🛒 *Nuovo Ordine #{order}*', 'woo-chat-lead-gen' ),
+				'----------------------------------',
+				'{items}',
+				'----------------------------------',
+				__( '📦 Spedizione: {shipping}', 'woo-chat-lead-gen' ),
+				__( '💰 *Totale Stimato: {total}*', 'woo-chat-lead-gen' ),
+				'',
+				__( 'Ciao! Vorrei confermare questo ordine.', 'woo-chat-lead-gen' ),
 			)
 		);
 	}
@@ -179,7 +219,18 @@ class WCLG_Settings {
 		$input     = is_array( $input ) ? $input : array();
 		$defaults  = self::defaults();
 		$clean     = array();
-		$checkboxes = array( 'enabled', 'disable_cart', 'hide_price', 'show_quantity', 'sticky_mobile', 'load_css', 'new_tab' );
+		$checkboxes = array(
+			'enabled',
+			'disable_cart',
+			'hide_price',
+			'show_quantity',
+			'sticky_mobile',
+			'load_css',
+			'new_tab',
+			'cart_drawer',
+			'single_chat_link',
+			'create_order',
+		);
 
 		foreach ( $checkboxes as $key ) {
 			$clean[ $key ] = ! empty( $input[ $key ] ) ? 'yes' : 'no';
@@ -192,6 +243,36 @@ class WCLG_Settings {
 		$clean['loop_button_action'] = in_array( $input['loop_button_action'] ?? '', array( 'product', 'chat' ), true )
 			? $input['loop_button_action']
 			: $defaults['loop_button_action'];
+
+		$clean['order_flow'] = in_array( $input['order_flow'] ?? '', array( 'cart', 'direct' ), true )
+			? $input['order_flow']
+			: $defaults['order_flow'];
+
+		$clean['shipping_mode'] = in_array( $input['shipping_mode'] ?? '', array( 'flat', 'quantity', 'weight', 'woo', 'none' ), true )
+			? $input['shipping_mode']
+			: $defaults['shipping_mode'];
+
+		// Importi: wc_format_decimal normalizza la virgola decimale italiana.
+		foreach ( array( 'shipping_flat', 'shipping_rate', 'shipping_base', 'shipping_free_over' ) as $key ) {
+			$clean[ $key ] = wc_format_decimal( $input[ $key ] ?? $defaults[ $key ], false, true );
+			if ( '' === $clean[ $key ] || (float) $clean[ $key ] < 0 ) {
+				$clean[ $key ] = '0';
+			}
+		}
+
+		// Prefisso ordine: solo lettere, cifre e trattini (finisce in un codice).
+		$prefix                 = strtoupper( sanitize_text_field( $input['order_prefix'] ?? '' ) );
+		$prefix                 = preg_replace( '/[^A-Z0-9\-]/', '', $prefix );
+		$clean['order_prefix']  = '' !== $prefix ? $prefix : $defaults['order_prefix'];
+		$clean['order_digits']  = (string) min( 8, max( 1, (int) ( $input['order_digits'] ?? 3 ) ) );
+
+		$clean['cart_button_label']   = sanitize_text_field( $input['cart_button_label'] ?? $defaults['cart_button_label'] );
+		$clean['price_request_label'] = sanitize_text_field( $input['price_request_label'] ?? $defaults['price_request_label'] );
+
+		foreach ( array( 'cart_message_template', 'cart_item_template' ) as $key ) {
+			$value         = trim( wp_unslash( (string) ( $input[ $key ] ?? '' ) ) );
+			$clean[ $key ] = '' !== $value ? sanitize_textarea_field( $value ) : $defaults[ $key ];
+		}
 
 		// Numero in formato internazionale, solo cifre (es. 393401234567).
 		$clean['phone']         = preg_replace( '/[^0-9]/', '', (string) ( $input['phone'] ?? '' ) );
@@ -241,8 +322,26 @@ class WCLG_Settings {
 				<table class="form-table" role="presentation">
 					<tbody>
 					<?php
-					$this->checkbox_row( 'enabled', __( 'Attiva modalità catalogo', 'woo-chat-lead-gen' ), __( 'Sostituisci "Aggiungi al carrello" con il pulsante chat.', 'woo-chat-lead-gen' ), $settings );
+					$this->checkbox_row( 'enabled', __( 'Attiva il plugin', 'woo-chat-lead-gen' ), __( 'Disattiva per tornare a WooCommerce standard senza disinstallare.', 'woo-chat-lead-gen' ), $settings );
 					?>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Flusso d\'ordine', 'woo-chat-lead-gen' ); ?></th>
+						<td>
+							<fieldset>
+								<label>
+									<input type="radio" name="<?php echo esc_attr( self::OPTION ); ?>[order_flow]" value="cart" <?php checked( $settings['order_flow'], 'cart' ); ?>>
+									<strong><?php esc_html_e( 'Carrello + invio ordine in chat', 'woo-chat-lead-gen' ); ?></strong><br>
+									<span class="description"><?php esc_html_e( 'L\'utente aggiunge più articoli, vede il riepilogo con la spedizione stimata e invia l\'ordine completo con un numero progressivo.', 'woo-chat-lead-gen' ); ?></span>
+								</label>
+								<br><br>
+								<label>
+									<input type="radio" name="<?php echo esc_attr( self::OPTION ); ?>[order_flow]" value="direct" <?php checked( $settings['order_flow'], 'direct' ); ?>>
+									<strong><?php esc_html_e( 'Diretto: dal prodotto alla chat', 'woo-chat-lead-gen' ); ?></strong><br>
+									<span class="description"><?php esc_html_e( 'Nessun carrello: ogni scheda prodotto apre la chat con quel singolo articolo.', 'woo-chat-lead-gen' ); ?></span>
+								</label>
+							</fieldset>
+						</td>
+					</tr>
 					<tr>
 						<th scope="row"><label for="wclg-channel"><?php esc_html_e( 'Canale', 'woo-chat-lead-gen' ); ?></label></th>
 						<td>
@@ -266,11 +365,11 @@ class WCLG_Settings {
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="wclg-label"><?php esc_html_e( 'Etichetta pulsante (scheda prodotto)', 'woo-chat-lead-gen' ); ?></label></th>
+						<th scope="row"><label for="wclg-label"><?php esc_html_e( 'Etichetta pulsante prodotto (flusso diretto)', 'woo-chat-lead-gen' ); ?></label></th>
 						<td><input type="text" class="regular-text" id="wclg-label" name="<?php echo esc_attr( self::OPTION ); ?>[button_label]" value="<?php echo esc_attr( $settings['button_label'] ); ?>"></td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="wclg-loop-label"><?php esc_html_e( 'Etichetta pulsante (catalogo)', 'woo-chat-lead-gen' ); ?></label></th>
+						<th scope="row"><label for="wclg-loop-label"><?php esc_html_e( 'Etichetta pulsante catalogo (flusso diretto)', 'woo-chat-lead-gen' ); ?></label></th>
 						<td>
 							<input type="text" class="regular-text" id="wclg-loop-label" name="<?php echo esc_attr( self::OPTION ); ?>[loop_button_label]" value="<?php echo esc_attr( $settings['loop_button_label'] ); ?>">
 							<p>
@@ -286,7 +385,7 @@ class WCLG_Settings {
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="wclg-template"><?php esc_html_e( 'Messaggio precompilato', 'woo-chat-lead-gen' ); ?></label></th>
+						<th scope="row"><label for="wclg-template"><?php esc_html_e( 'Messaggio prodotto (flusso diretto)', 'woo-chat-lead-gen' ); ?></label></th>
 						<td>
 							<textarea id="wclg-template" name="<?php echo esc_attr( self::OPTION ); ?>[message_template]" rows="10" class="large-text code"><?php echo esc_textarea( $settings['message_template'] ); ?></textarea>
 							<p class="description">
@@ -298,12 +397,113 @@ class WCLG_Settings {
 						</td>
 					</tr>
 					<?php
-					$this->checkbox_row( 'disable_cart', __( 'Disattiva carrello e pagamenti', 'woo-chat-lead-gen' ), __( 'Blocca gli aggiunta-al-carrello, reindirizza carrello/checkout e rimuove i gateway di pagamento.', 'woo-chat-lead-gen' ), $settings );
-					$this->checkbox_row( 'show_quantity', __( 'Selettore quantità', 'woo-chat-lead-gen' ), __( 'Mostra il campo quantità accanto al pulsante chat.', 'woo-chat-lead-gen' ), $settings );
+					$this->checkbox_row( 'disable_cart', __( 'Disattiva carrello e pagamenti', 'woo-chat-lead-gen' ), __( 'Solo nel flusso diretto: blocca gli aggiunta-al-carrello e reindirizza carrello/checkout. Nel flusso con carrello restano attivi solo i pagamenti disattivati.', 'woo-chat-lead-gen' ), $settings );
+					$this->checkbox_row( 'show_quantity', __( 'Selettore quantità', 'woo-chat-lead-gen' ), __( 'Solo nel flusso diretto: campo quantità accanto al pulsante chat.', 'woo-chat-lead-gen' ), $settings );
 					$this->checkbox_row( 'hide_price', __( 'Nascondi i prezzi', 'woo-chat-lead-gen' ), __( 'Utile per listini su richiesta.', 'woo-chat-lead-gen' ), $settings );
-					$this->checkbox_row( 'sticky_mobile', __( 'CTA fissa su mobile', 'woo-chat-lead-gen' ), __( 'Barra sempre visibile in fondo allo schermo nella scheda prodotto.', 'woo-chat-lead-gen' ), $settings );
+					$this->checkbox_row( 'sticky_mobile', __( 'CTA fissa su mobile', 'woo-chat-lead-gen' ), __( 'Solo nel flusso diretto: barra sempre visibile nella scheda prodotto.', 'woo-chat-lead-gen' ), $settings );
 					$this->checkbox_row( 'new_tab', __( 'Apri la chat in una nuova scheda', 'woo-chat-lead-gen' ), '', $settings );
 					$this->checkbox_row( 'load_css', __( 'Carica il CSS del plugin', 'woo-chat-lead-gen' ), __( 'Disattiva se preferisci gestire lo stile dal tema.', 'woo-chat-lead-gen' ), $settings );
+					?>
+					</tbody>
+				</table>
+
+				<h2><?php esc_html_e( 'Carrello e invio ordine', 'woo-chat-lead-gen' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Impostazioni usate solo con il flusso "Carrello + invio ordine in chat".', 'woo-chat-lead-gen' ); ?></p>
+				<table class="form-table" role="presentation">
+					<tbody>
+					<tr>
+						<th scope="row"><label for="wclg-cart-label"><?php esc_html_e( 'Etichetta pulsante carrello', 'woo-chat-lead-gen' ); ?></label></th>
+						<td><input type="text" class="regular-text" id="wclg-cart-label" name="<?php echo esc_attr( self::OPTION ); ?>[cart_button_label]" value="<?php echo esc_attr( $settings['cart_button_label'] ); ?>"></td>
+					</tr>
+					<?php
+					$this->checkbox_row( 'cart_drawer', __( 'Drawer laterale', 'woo-chat-lead-gen' ), __( 'Pannello carrello che si apre di lato con pulsante flottante e contatore.', 'woo-chat-lead-gen' ), $settings );
+					$this->checkbox_row( 'single_chat_link', __( 'Link "chiedi info" sul prodotto', 'woo-chat-lead-gen' ), __( 'Aggiunge un link discreto alla chat sotto il pulsante "Aggiungi al carrello".', 'woo-chat-lead-gen' ), $settings );
+					?>
+					<tr>
+						<th scope="row"><label for="wclg-cart-template"><?php esc_html_e( 'Messaggio d\'ordine', 'woo-chat-lead-gen' ); ?></label></th>
+						<td>
+							<textarea id="wclg-cart-template" name="<?php echo esc_attr( self::OPTION ); ?>[cart_message_template]" rows="10" class="large-text code"><?php echo esc_textarea( $settings['cart_message_template'] ); ?></textarea>
+							<p class="description">
+								<?php esc_html_e( 'Segnaposto:', 'woo-chat-lead-gen' ); ?>
+								<code>{order}</code> <code>{items}</code> <code>{subtotal}</code>
+								<code>{shipping}</code> <code>{total}</code> <code>{count}</code>
+								<code>{url}</code> <code>{shop}</code>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wclg-item-template"><?php esc_html_e( 'Riga articolo', 'woo-chat-lead-gen' ); ?></label></th>
+						<td>
+							<input type="text" class="large-text code" id="wclg-item-template" name="<?php echo esc_attr( self::OPTION ); ?>[cart_item_template]" value="<?php echo esc_attr( $settings['cart_item_template'] ); ?>">
+							<p class="description">
+								<?php esc_html_e( 'Segnaposto:', 'woo-chat-lead-gen' ); ?>
+								<code>{name}</code> <code>{variant}</code> <code>{qty}</code> <code>{price}</code> <code>{sku}</code>.
+								<?php esc_html_e( 'I segmenti separati da " - " con segnaposto vuoti spariscono: su un prodotto senza taglia non resta "Taglia:" a vuoto.', 'woo-chat-lead-gen' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="wclg-price-label"><?php esc_html_e( 'Etichetta prezzo su richiesta', 'woo-chat-lead-gen' ); ?></label></th>
+						<td>
+							<input type="text" class="regular-text" id="wclg-price-label" name="<?php echo esc_attr( self::OPTION ); ?>[price_request_label]" value="<?php echo esc_attr( $settings['price_request_label'] ); ?>">
+							<p class="description"><?php esc_html_e( 'Mostrata sui prodotti senza prezzo o marcati "Prezzo da concordare" nella scheda prodotto.', 'woo-chat-lead-gen' ); ?></p>
+						</td>
+					</tr>
+					</tbody>
+				</table>
+
+				<h2><?php esc_html_e( 'Spedizione stimata', 'woo-chat-lead-gen' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tbody>
+					<tr>
+						<th scope="row"><label for="wclg-shipping-mode"><?php esc_html_e( 'Calcolo', 'woo-chat-lead-gen' ); ?></label></th>
+						<td>
+							<select name="<?php echo esc_attr( self::OPTION ); ?>[shipping_mode]" id="wclg-shipping-mode">
+								<option value="flat" <?php selected( $settings['shipping_mode'], 'flat' ); ?>><?php esc_html_e( 'Tariffa fissa', 'woo-chat-lead-gen' ); ?></option>
+								<option value="quantity" <?php selected( $settings['shipping_mode'], 'quantity' ); ?>><?php esc_html_e( 'Base + tariffa per articolo', 'woo-chat-lead-gen' ); ?></option>
+								<option value="weight" <?php selected( $settings['shipping_mode'], 'weight' ); ?>><?php esc_html_e( 'Base + tariffa al kg', 'woo-chat-lead-gen' ); ?></option>
+								<option value="woo" <?php selected( $settings['shipping_mode'], 'woo' ); ?>><?php esc_html_e( 'Spedizioni native WooCommerce', 'woo-chat-lead-gen' ); ?></option>
+								<option value="none" <?php selected( $settings['shipping_mode'], 'none' ); ?>><?php esc_html_e( 'Sempre da concordare in chat', 'woo-chat-lead-gen' ); ?></option>
+							</select>
+						</td>
+					</tr>
+					<?php
+					$this->number_row( 'shipping_flat', __( 'Tariffa fissa', 'woo-chat-lead-gen' ), __( 'Usata dalla tariffa fissa e come ripiego per le spedizioni native.', 'woo-chat-lead-gen' ), $settings );
+					$this->number_row( 'shipping_base', __( 'Quota base', 'woo-chat-lead-gen' ), __( 'Sommata al calcolo per articolo o a peso.', 'woo-chat-lead-gen' ), $settings );
+					$this->number_row( 'shipping_rate', __( 'Tariffa per articolo / per kg', 'woo-chat-lead-gen' ), '', $settings );
+					$this->number_row( 'shipping_free_over', __( 'Spedizione gratuita oltre', 'woo-chat-lead-gen' ), __( '0 per disattivare la soglia.', 'woo-chat-lead-gen' ), $settings );
+					?>
+					</tbody>
+				</table>
+
+				<h2><?php esc_html_e( 'Numerazione ordini', 'woo-chat-lead-gen' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tbody>
+					<tr>
+						<th scope="row"><label for="wclg-order-prefix"><?php esc_html_e( 'Formato codice', 'woo-chat-lead-gen' ); ?></label></th>
+						<td>
+							<input type="text" class="small-text" id="wclg-order-prefix" name="<?php echo esc_attr( self::OPTION ); ?>[order_prefix]" value="<?php echo esc_attr( $settings['order_prefix'] ); ?>">
+							<input type="number" class="small-text" min="1" max="8" name="<?php echo esc_attr( self::OPTION ); ?>[order_digits]" value="<?php echo esc_attr( $settings['order_digits'] ); ?>">
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %s: esempio di codice ordine. */
+									esc_html__( 'Prefisso e numero di cifre. Risultato: %s. Il progressivo riparte da 1 ogni anno.', 'woo-chat-lead-gen' ),
+									'<code>' . esc_html(
+										sprintf(
+											'%s-%s-%0' . max( 1, (int) $settings['order_digits'] ) . 'd',
+											$settings['order_prefix'],
+											current_time( 'Y' ),
+											1
+										)
+									) . '</code>'
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+					<?php
+					$this->checkbox_row( 'create_order', __( 'Registra l\'ordine in WooCommerce', 'woo-chat-lead-gen' ), __( 'Crea un ordine nello stato "In attesa in chat", così la richiesta resta in bacheca ordini.', 'woo-chat-lead-gen' ), $settings );
 					?>
 					</tbody>
 				</table>
@@ -316,6 +516,31 @@ class WCLG_Settings {
 				<?php esc_html_e( 'inserisce il pulsante ovunque (accetta id="123" e label="Testo").', 'woo-chat-lead-gen' ); ?>
 			</p>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Riga con importo in valuta.
+	 *
+	 * @param string $key         Chiave opzione.
+	 * @param string $label       Etichetta.
+	 * @param string $description Testo di aiuto.
+	 * @param array  $settings    Valori correnti.
+	 */
+	private function number_row( $key, $label, $description, $settings ) {
+		?>
+		<tr>
+			<th scope="row"><label for="wclg-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></label></th>
+			<td>
+				<input type="number" step="0.01" min="0" class="small-text" id="wclg-<?php echo esc_attr( $key ); ?>"
+					name="<?php echo esc_attr( self::OPTION . '[' . $key . ']' ); ?>"
+					value="<?php echo esc_attr( $settings[ $key ] ?? '0' ); ?>">
+				<span><?php echo esc_html( get_woocommerce_currency_symbol() ); ?></span>
+				<?php if ( $description ) : ?>
+					<p class="description"><?php echo esc_html( $description ); ?></p>
+				<?php endif; ?>
+			</td>
+		</tr>
 		<?php
 	}
 
