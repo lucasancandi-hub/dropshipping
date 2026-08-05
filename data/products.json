@@ -1,0 +1,380 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-05T11:43:17+00:00",
+  "currency": "EUR",
+  "categories": [
+    "Felpe",
+    "Pantaloni",
+    "T-Shirt",
+    "Giacche",
+    "Accessori",
+    "Maglieria",
+    "Scarpe"
+  ],
+  "products": [
+    {
+      "id": "FLP-OVR-NER",
+      "slug": "felpa-oversize-nera",
+      "title": "Felpa Oversize Nera",
+      "category": "Felpe",
+      "price": 59.9,
+      "listPrice": 79.9,
+      "priceOnRequest": false,
+      "currency": "EUR",
+      "images": [
+        "https://picsum.photos/seed/felpa1/900/1200",
+        "https://picsum.photos/seed/felpa2/900/1200",
+        "https://picsum.photos/seed/felpa3/900/1200"
+      ],
+      "variantLabel": "Taglia",
+      "variants": [
+        {
+          "id": "FLP-OVR-NER-s",
+          "label": "S",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "FLP-OVR-NER-m",
+          "label": "M",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "FLP-OVR-NER-l",
+          "label": "L",
+          "attribute": "Taglia",
+          "price": 64.9,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "FLP-OVR-NER-xl",
+          "label": "XL",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": false,
+          "sku": null
+        }
+      ],
+      "sku": "FLP-OVR-NER",
+      "description": "Felpa girocollo in cotone organico, cuciture rinforzate, lavabile a 30°.",
+      "shortDescription": "Cotone pesante 400 g/m², vestibilità oversize.",
+      "inStock": true,
+      "sourceUrl": ""
+    },
+    {
+      "id": "JNS-CRG-BEI",
+      "slug": "jeans-cargo-beige",
+      "title": "Jeans Cargo Beige",
+      "category": "Pantaloni",
+      "price": 89.0,
+      "listPrice": null,
+      "priceOnRequest": false,
+      "currency": "EUR",
+      "images": [
+        "https://picsum.photos/seed/jeans1/900/1200",
+        "https://picsum.photos/seed/jeans2/900/1200",
+        "https://picsum.photos/seed/jeans3/900/1200"
+      ],
+      "variantLabel": "Taglia",
+      "variants": [
+        {
+          "id": "JNS-CRG-BEI-28",
+          "label": "28",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "JNS-CRG-BEI-30",
+          "label": "30",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "JNS-CRG-BEI-32",
+          "label": "32",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "JNS-CRG-BEI-34",
+          "label": "34",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        }
+      ],
+      "sku": "JNS-CRG-BEI",
+      "description": "Jeans cargo in denim 100% cotone, cinque tasche più tasconi.",
+      "shortDescription": "Denim rigido, tasconi laterali, fondo ampio.",
+      "inStock": true,
+      "sourceUrl": ""
+    },
+    {
+      "id": "TSH-BXY-BIA",
+      "slug": "t-shirt-boxy-bianca",
+      "title": "T-Shirt Boxy Bianca",
+      "category": "T-Shirt",
+      "price": 29.9,
+      "listPrice": null,
+      "priceOnRequest": false,
+      "currency": "EUR",
+      "images": [
+        "https://picsum.photos/seed/tee1/900/1200",
+        "https://picsum.photos/seed/tee2/900/1200"
+      ],
+      "variantLabel": "Taglia",
+      "variants": [
+        {
+          "id": "TSH-BXY-BIA-s",
+          "label": "S",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": false,
+          "sku": null
+        },
+        {
+          "id": "TSH-BXY-BIA-m",
+          "label": "M",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "TSH-BXY-BIA-l",
+          "label": "L",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        }
+      ],
+      "sku": "TSH-BXY-BIA",
+      "description": "",
+      "shortDescription": "Jersey pettinato 220 g/m², spalla scesa.",
+      "inStock": true,
+      "sourceUrl": ""
+    },
+    {
+      "id": "GCC-PEL-VNT",
+      "slug": "giacca-in-pelle-vintage",
+      "title": "Giacca in Pelle Vintage",
+      "category": "Giacche",
+      "price": 199.0,
+      "listPrice": 249.0,
+      "priceOnRequest": false,
+      "currency": "EUR",
+      "images": [
+        "https://picsum.photos/seed/giacca1/900/1200",
+        "https://picsum.photos/seed/giacca2/900/1200",
+        "https://picsum.photos/seed/giacca3/900/1200"
+      ],
+      "variantLabel": "Taglia",
+      "variants": [
+        {
+          "id": "GCC-PEL-VNT-m",
+          "label": "M",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "GCC-PEL-VNT-l",
+          "label": "L",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": false,
+          "sku": null
+        }
+      ],
+      "sku": "GCC-PEL-VNT",
+      "description": "Capo selezionato, leggere irregolarità sono parte del trattamento vintage.",
+      "shortDescription": "Pelle bovina trattata, fodera in raso.",
+      "inStock": true,
+      "sourceUrl": ""
+    },
+    {
+      "id": "CAP-FLT-001",
+      "slug": "cappello-in-feltro",
+      "title": "Cappello in Feltro",
+      "category": "Accessori",
+      "price": null,
+      "listPrice": null,
+      "priceOnRequest": true,
+      "currency": "EUR",
+      "images": [
+        "https://picsum.photos/seed/cappello1/900/1200",
+        "https://picsum.photos/seed/cappello2/900/1200"
+      ],
+      "variantLabel": "Taglia",
+      "variants": [
+        {
+          "id": "CAP-FLT-001-unica",
+          "label": "Unica",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        }
+      ],
+      "sku": "CAP-FLT-001",
+      "description": "",
+      "shortDescription": "Feltro di lana, nastro grosgrain. Prezzo secondo finitura.",
+      "inStock": true,
+      "sourceUrl": ""
+    },
+    {
+      "id": "MGL-MRN-GRG",
+      "slug": "maglione-lana-merino",
+      "title": "Maglione Lana Merino",
+      "category": "Maglieria",
+      "price": 119.0,
+      "listPrice": null,
+      "priceOnRequest": false,
+      "currency": "EUR",
+      "images": [
+        "https://picsum.photos/seed/maglione1/900/1200",
+        "https://picsum.photos/seed/maglione2/900/1200",
+        "https://picsum.photos/seed/maglione3/900/1200"
+      ],
+      "variantLabel": "Taglia",
+      "variants": [
+        {
+          "id": "MGL-MRN-GRG-s",
+          "label": "S",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "MGL-MRN-GRG-m",
+          "label": "M",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "MGL-MRN-GRG-l",
+          "label": "L",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "MGL-MRN-GRG-xl",
+          "label": "XL",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        }
+      ],
+      "sku": "MGL-MRN-GRG",
+      "description": "",
+      "shortDescription": "Lana merino extrafine, collo alto.",
+      "inStock": true,
+      "sourceUrl": ""
+    },
+    {
+      "id": "SNK-MNL-BIA",
+      "slug": "sneakers-minimal-bianche",
+      "title": "Sneakers Minimal Bianche",
+      "category": "Scarpe",
+      "price": 139.0,
+      "listPrice": null,
+      "priceOnRequest": false,
+      "currency": "EUR",
+      "images": [
+        "https://picsum.photos/seed/sneakers1/900/1200",
+        "https://picsum.photos/seed/sneakers2/900/1200",
+        "https://picsum.photos/seed/sneakers3/900/1200"
+      ],
+      "variantLabel": "Taglia",
+      "variants": [
+        {
+          "id": "SNK-MNL-BIA-40",
+          "label": "40",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": false,
+          "sku": null
+        },
+        {
+          "id": "SNK-MNL-BIA-41",
+          "label": "41",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "SNK-MNL-BIA-42",
+          "label": "42",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "SNK-MNL-BIA-43",
+          "label": "43",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        },
+        {
+          "id": "SNK-MNL-BIA-44",
+          "label": "44",
+          "attribute": "Taglia",
+          "price": null,
+          "inStock": true,
+          "sku": null
+        }
+      ],
+      "sku": "SNK-MNL-BIA",
+      "description": "",
+      "shortDescription": "Pelle liscia, suola in gomma naturale.",
+      "inStock": true,
+      "sourceUrl": ""
+    },
+    {
+      "id": "BRS-TOT-CNV",
+      "slug": "borsa-tote-in-canvas",
+      "title": "Borsa Tote in Canvas",
+      "category": "Accessori",
+      "price": 69.0,
+      "listPrice": null,
+      "priceOnRequest": false,
+      "currency": "EUR",
+      "images": [
+        "https://picsum.photos/seed/borsa1/900/1200",
+        "https://picsum.photos/seed/borsa2/900/1200"
+      ],
+      "variantLabel": null,
+      "variants": [],
+      "sku": "BRS-TOT-CNV",
+      "description": "",
+      "shortDescription": "Canvas 16 oz, manici in cuoio.",
+      "inStock": true,
+      "sourceUrl": ""
+    }
+  ]
+}

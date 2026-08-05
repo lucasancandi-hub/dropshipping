@@ -1,13 +1,5 @@
-"""Exporter disponibili: CSV nativo WooCommerce e REST API v3."""
+"""Export del catalogo verso il frontend."""
 
-from .csv_exporter import COLUMNS, export_csv, product_to_rows
-from .woo_api import WooCommerceClient, WooCommerceError, push_to_woocommerce
+from .json_exporter import SCHEMA_VERSION, build_catalog, export_json, product_to_dict
 
-__all__ = [
-    "COLUMNS",
-    "export_csv",
-    "product_to_rows",
-    "WooCommerceClient",
-    "WooCommerceError",
-    "push_to_woocommerce",
-]
+__all__ = ["SCHEMA_VERSION", "build_catalog", "export_json", "product_to_dict"]

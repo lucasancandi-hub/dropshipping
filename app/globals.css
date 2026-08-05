@@ -1,0 +1,74 @@
+@import 'tailwindcss';
+
+/**
+ * Design system minimale, stesso linguaggio visivo della versione precedente:
+ * immagini protagoniste, una sola azione per schermata, tipografia essenziale.
+ */
+@theme {
+  --color-brand: #25d366;        /* verde WhatsApp: solo per le CTA */
+  --color-brand-dark: #128c7e;
+  --radius-card: 1rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-neutral-900 antialiased;
+    font-synthesis-weight: none;
+  }
+
+  ::selection {
+    @apply bg-neutral-900 text-white;
+  }
+
+  /* Il focus resta sempre visibile: navigazione da tastiera di serie. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-700;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      @apply bg-neutral-950 text-neutral-100;
+    }
+
+    ::selection {
+      @apply bg-white text-neutral-900;
+    }
+  }
+}
+
+@layer components {
+  /* CTA principale: unica azione verde della pagina. */
+  .btn-chat {
+    @apply inline-flex h-14 items-center justify-center gap-2.5 rounded-full bg-brand
+           px-7 text-base font-semibold text-white shadow-lg shadow-brand/30
+           transition hover:-translate-y-0.5 hover:bg-brand-dark hover:shadow-xl
+           active:translate-y-0 disabled:pointer-events-none disabled:opacity-60
+           motion-reduce:transition-none motion-reduce:hover:translate-y-0;
+  }
+
+  /* Azione neutra: aggiungi al carrello, secondarie. */
+  .btn-solid {
+    @apply inline-flex h-14 items-center justify-center gap-2 rounded-full bg-neutral-900 px-7
+           text-base font-semibold text-white transition hover:bg-neutral-700
+           disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400
+           dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200
+           dark:disabled:bg-neutral-800 dark:disabled:text-neutral-600;
+  }
+
+  .btn-ghost {
+    @apply inline-flex h-11 items-center justify-center rounded-full border border-neutral-200
+           px-5 text-sm font-medium transition hover:border-neutral-900
+           dark:border-neutral-700 dark:hover:border-neutral-400;
+  }
+
+  /* Prezzo da concordare: informativo, non urlato. */
+  .tag-request {
+    @apply inline-block rounded-full border border-dashed border-neutral-300 px-2.5 py-0.5
+           text-sm font-medium text-neutral-500
+           dark:border-neutral-700 dark:text-neutral-400;
+  }
+}

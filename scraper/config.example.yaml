@@ -66,13 +66,6 @@ parsing:
   sku_prefix: "DS"
   image_attributes: ["data-srcset", "srcset", "data-src", "src"]
 
-# --- Import diretto via REST API (usato solo con --push) ---------------------
-# Le chiavi restano nell'ambiente: export WOO_CONSUMER_KEY=ck_...
-woocommerce:
-  url: "https://iltuoshop.it"
-  consumer_key: "${WOO_CONSUMER_KEY}"
-  consumer_secret: "${WOO_CONSUMER_SECRET}"
-  status: publish             # publish | draft | pending
-  manage_stock: false
-  timeout: 30
-  verify_ssl: true
+# --- Output ------------------------------------------------------------------
+# Il JSON generato viene letto dal frontend a build time.
+# Percorso di default: ../data/products.json (sovrascrivibile con -o)

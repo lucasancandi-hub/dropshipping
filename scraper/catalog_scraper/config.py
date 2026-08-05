@@ -115,26 +115,12 @@ class SiteConfig:
 
 
 @dataclass
-class WooConfig:
-    """Credenziali REST API WooCommerce (chiavi generate da WooCommerce > Impostazioni > Avanzate)."""
-
-    url: str = ""
-    consumer_key: str = ""
-    consumer_secret: str = ""
-    timeout: int = 30
-    status: str = "publish"
-    manage_stock: bool = False
-    verify_ssl: bool = True
-
-
-@dataclass
 class ScraperConfig:
     site: SiteConfig = field(default_factory=SiteConfig)
     selectors: SelectorConfig = field(default_factory=SelectorConfig)
     detail: DetailConfig = field(default_factory=DetailConfig)
     http: HttpConfig = field(default_factory=HttpConfig)
     parsing: ParsingConfig = field(default_factory=ParsingConfig)
-    woocommerce: WooConfig = field(default_factory=WooConfig)
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> "ScraperConfig":
@@ -147,7 +133,6 @@ class ScraperConfig:
             detail=DetailConfig(**(raw.get("detail") or {})),
             http=HttpConfig(**(raw.get("http") or {})),
             parsing=ParsingConfig(**(raw.get("parsing") or {})),
-            woocommerce=WooConfig(**(raw.get("woocommerce") or {})),
         )
 
     @classmethod

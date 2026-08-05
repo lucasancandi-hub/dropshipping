@@ -5,13 +5,13 @@
 
 from __future__ import annotations
 
-import csv
+import json
 from pathlib import Path
 
 import pytest
 
 from catalog_scraper.config import ScraperConfig
-from catalog_scraper.exporters.csv_exporter import export_csv, product_to_rows
+from catalog_scraper.exporters.json_exporter import build_catalog, export_json
 from catalog_scraper.models import Product, Variant
 from catalog_scraper.parser import CatalogParser, detect_currency, parse_price
 
@@ -168,40 +168,54 @@ def test_enrich_galleria_e_testi(felpa_arricchita):
 
 
 # --------------------------------------------------------------------------- #
-# Export CSV
+# Export JSON (contratto con il frontend)
 # --------------------------------------------------------------------------- #
-def test_csv_prodotto_variabile(felpa_arricchita, tmp_path):
-    destination = export_csv([felpa_arricchita], tmp_path / "catalogo.csv")
-    with destination.open(encoding="utf-8-sig") as handle:
-        rows = list(csv.DictReader(handle))
+def test_catalogo_json_prodotto_variabile(felpa_arricchita, tmp_path):
+    destination = export_json([felpa_arricchita], tmp_path / "products.json")
+    catalog = json.loads(destination.read_text(encoding="utf-8"))
 
-    parent, *variations = rows
-    assert parent["Type"] == "variable"
-    assert parent["SKU"] == "FLP-OVR-NER"
-    assert parent["Attribute 1 name"] == "Taglia"
-    assert parent["Attribute 1 value(s)"] == "S | M | L | XL"
-    assert parent["Categories"] == "Felpe"
-    assert len(variations) == 4
-    assert variations[0]["Type"] == "variation"
-    assert variations[0]["Parent"] == "id:FLP-OVR-NER"
-    assert variations[0]["SKU"] == "FLP-OVR-NER-S"
-    assert variations[2]["Regular price"] == "64.9"
-    assert variations[3]["In stock?"] == "0"
+    assert catalog["schemaVersion"] == 1
+    assert catalog["categories"] == ["Felpe"]
+    assert catalog["generatedAt"].endswith("+00:00")
 
-
-def test_csv_prodotto_semplice(tmp_path):
-    simple = Product(title="Cappello", price=19.9, categories=["Accessori"])
-    simple.ensure_sku()
-    rows = product_to_rows(simple)
-    assert len(rows) == 1
-    assert rows[0]["Type"] == "simple"
-    assert rows[0]["Attribute 1 name"] == ""
+    product = catalog["products"][0]
+    assert product["slug"] == "felpa-oversize-nera"
+    assert product["title"] == "Felpa Oversize Nera"
+    assert product["price"] == 59.90          # prezzo scontato
+    assert product["listPrice"] == 79.90      # prezzo pieno barrato
+    assert product["priceOnRequest"] is False
+    assert product["variantLabel"] == "Taglia"
+    assert [v["label"] for v in product["variants"]] == ["S", "M", "L", "XL"]
+    assert product["variants"][2]["price"] == 64.90
+    assert product["variants"][3]["inStock"] is False
+    assert len(product["images"]) == len(set(product["images"]))
 
 
-def test_variante_senza_prezzo_eredita_dal_padre():
-    product = Product(title="Cinta", price=25.0, sale_price=20.0)
+def test_prodotto_senza_prezzo_e_da_concordare():
+    muto = Product(title="Borsa su misura", categories=["Accessori"])
+    muto.ensure_sku()
+    catalog = build_catalog([muto])
+
+    assert catalog["products"][0]["priceOnRequest"] is True
+    assert catalog["products"][0]["price"] is None
+
+
+def test_slug_duplicati_restano_unici():
+    primo = Product(title="Cappello", price=19.9, url="https://a.test/1")
+    secondo = Product(title="Cappello", price=24.9, url="https://a.test/2")
+    primo.ensure_sku()
+    secondo.ensure_sku()
+
+    slugs = [p["slug"] for p in build_catalog([primo, secondo])["products"]]
+    assert slugs == ["cappello", "cappello-2"]
+
+
+def test_variante_senza_prezzo_resta_nulla():
+    product = Product(title="Cinta", price=25.0)
     product.ensure_sku()
     product.variants = [Variant(attribute="Taglia", value="Unica")]
-    rows = product_to_rows(product)
-    assert rows[1]["Regular price"] == 25.0  # nel CSV il padre porta anche il saldo
-    assert rows[0]["Sale price"] == 20.0
+
+    variant = build_catalog([product])["products"][0]["variants"][0]
+    assert variant["price"] is None   # il frontend eredita il prezzo del prodotto
+    assert variant["label"] == "Unica"
+    assert variant["inStock"] is True
